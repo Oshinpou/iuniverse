@@ -267,16 +267,7 @@
     }
 
    
- const accountId = "user_" + Date.now(); // Unique account ID
-
-  const user = {
-    id: accountId
-  };
-
-  localStorage.setItem("loggedInUser", JSON.stringify(user));
-  window.location.href = "index.html"; // Or wherever you want to go
-
-
+ 
  function recoverPassword() {
       const username = document.getElementById('recover-user').value.trim();
       const email = document.getElementById('recover-email').value.trim().toLowerCase();
