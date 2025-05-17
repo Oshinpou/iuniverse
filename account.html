@@ -54,6 +54,11 @@
   <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded">
   <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded">
   <input id="signup-phone" type="tel" placeholder="Phone with country code" class="w-full p-2 rounded">
+ <select id="countryCode">
+      <option value="+91">+91 India</option>
+      <option value="+1">+1 USA</option>
+      <option value="+44">+44 UK</option>
+    </select>
   <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded">
   <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded">
   <button onclick="signup()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Sign Up</button>
@@ -63,9 +68,14 @@
 <!-- Recover Password -->
 <div class="glass-box">
   <h2 class="text-2xl mb-4">Recover Password</h2>
-  <input id="recover-user" type="text" placeholder="Username (optional)" class="w-full p-2 rounded">
-  <input id="recover-email" type="email" placeholder="Email (optional)" class="w-full p-2 rounded">
-  <input id="recover-phone" type="tel" placeholder="Phone with country code (optional)" class="w-full p-2 rounded">
+  <input id="recover-user" type="text" placeholder="Username " class="w-full p-2 rounded">
+  <input id="recover-email" type="email" placeholder="Email " class="w-full p-2 rounded">
+  <input id="recover-phone" type="tel" placeholder="Phone with country code" class="w-full p-2 rounded">
+  <select id="countryCode">
+      <option value="+91">+91 India</option>
+      <option value="+1">+1 USA</option>
+      <option value="+44">+44 UK</option>
+    </select>
   <button onclick="recoverPassword()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Password</button>
   <p id="recover-msg" class="text-red-500"></p>
 </div>
@@ -75,6 +85,11 @@
   <h2 class="text-2xl mb-4">Recover Username</h2>
   <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded">
   <input id="username-recovery-phone" type="tel" placeholder="Phone with country code" class="w-full p-2 rounded">
+ <select id="countryCode">
+      <option value="+91">+91 India</option>
+      <option value="+1">+1 USA</option>
+      <option value="+44">+44 UK</option>
+    </select>
   <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded">
   <button onclick="recoverUsername()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Username</button>
   <p id="username-msg" class="text-red-500"></p>
