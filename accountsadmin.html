@@ -53,21 +53,24 @@
 </div>
 
   </div>  <script>
-    const gun = Gun();
+     const gun = Gun(); // Connects to default peer or local memory
     const db = gun.get('imacx-accounts');
 
     function searchUser() {
       const input = document.getElementById('searchUser').value.trim();
-      if (!input) return alert('Enter username/email/phone');
+      if (!input) return alert('Enter username, email, or phone');
 
       let found = false;
+      document.getElementById('userInfo').innerText = 'Searching...';
+
       db.map().once((data, key) => {
         if (!data) return;
         if ([data.username, data.email, data.phone].includes(input)) {
-          document.getElementById('userInfo').innerText = JSON.stringify(data, null, 2);
+          document.getElementById('userInfo').innerText = `User ID: ${key}\n\n` + JSON.stringify(data, null, 2);
           found = true;
         }
       });
+
       setTimeout(() => {
         if (!found) document.getElementById('userInfo').innerText = 'User not found.';
       }, 1000);
@@ -76,23 +79,28 @@
     function loadAllUsers() {
       let all = '';
       let count = 0;
+      document.getElementById('userInfo').innerText = 'Loading all users...';
+
       db.map().once((data, key) => {
         if (data) {
           all += `User ID: ${key}\n` + JSON.stringify(data, null, 2) + '\n\n';
           count++;
+          document.getElementById('userInfo').innerText = all;
+          document.getElementById('userCount').innerText = count;
         }
-        document.getElementById('userInfo').innerText = all || 'No users found.';
-        document.getElementById('userCount').innerText = count;
       });
     }
 
-    // Display total users on load
+    // Count users on page load
     window.onload = () => {
       let count = 0;
-      db.map().once(data => {
+      db.map().once((data) => {
         if (data) count++;
         document.getElementById('userCount').innerText = count;
       });
     }
+  
+    
+      
   </script></body>
 </html>
