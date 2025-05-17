@@ -140,10 +140,11 @@
   <div class="header-container">
     <div id="account-connect-button"></div>
 <!-- Place this script block at bottom of your HTML page -->
-<script src="account-session.js"></script>
+<script src="account-session.js" defer></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    renderAccountConnectButton();
+    renderAccountConnectButton();      // For container-based connect UI
+    renderHeaderConnectButton();       // For header button with id="connect-btn-header"
   });
 </script>
 
