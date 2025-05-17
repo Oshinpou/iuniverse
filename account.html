@@ -228,14 +228,21 @@
     }
 
    
-// Example: after login success
-const user = {
-  id: "user123",          // replace with real ID
-  name: "John Doe"        // optional: full name
-};
 
-localStorage.setItem("loggedInUser", JSON.stringify(user));
-window.location.href = "index.html"; // or wherever the user should go
+  // Create a unique account ID (e.g., using timestamp)
+  const accountId = "user_" + Date.now();
+
+  const user = {
+    id: accountId
+  };
+
+  // Save the user info in localStorage
+  localStorage.setItem("loggedInUser", JSON.stringify(user));
+
+  // Redirect to homepage or any other page
+  window.location.href = "index.html"; // Change if needed
+
+
 
     
     function recoverPassword() {
