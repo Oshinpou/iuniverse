@@ -1,8 +1,5 @@
-// Constants
-const SESSION_KEY = 'imacx-session'; // stores currently logged-in session
-const ACCOUNTS_KEY = 'imacx-accounts'; // stores all accounts (if used separately)
+const SESSION_KEY = 'imacx-session';
 
-// Save current session
 function saveAccountSession(user) {
   const sessionData = {
     id: user.id || uuidv4(),
@@ -13,60 +10,56 @@ function saveAccountSession(user) {
   return sessionData;
 }
 
-// Get current session
 function getAccountSession() {
   const data = localStorage.getItem(SESSION_KEY);
   return data ? JSON.parse(data) : null;
 }
 
-// Clear session
 function clearAccountSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-// Sync Header Login Status
-function updateHeaderLoginStatus() {
+// Show Connect Button (Reusable on every page)
+function renderAccountConnectButton() {
+  const container = document.getElementById("account-connect-button");
   const session = getAccountSession();
 
-  // Wait until header loads
-  const checkAndInject = () => {
-    const loginContainer = document.querySelector("#login-status");
-    if (loginContainer) {
-      if (session) {
-        loginContainer.innerHTML = `
-          <div class="text-white flex items-center gap-4">
-            <span>Welcome, ${session.username}</span>
-            <button class="bg-red-600 px-3 py-1 rounded" onclick="logout()">Logout</button>
-          </div>
-        `;
-      } else {
-        loginContainer.innerHTML = `
-          <button class="text-white bg-yellow-500 px-4 py-2 rounded" onclick="window.location.href='account.html'">Login</button>
-        `;
-      }
-    } else {
-      setTimeout(checkAndInject, 100); // Retry until header is rendered
-    }
-  };
+  if (!container) return;
 
-  checkAndInject();
+  if (session) {
+    const date = new Date(session.timestamp).toLocaleString();
+    container.innerHTML = `
+      <div class="text-white text-sm bg-green-700 p-3 rounded flex flex-col gap-1">
+        <span>Connected ID: <b>${session.id}</b></span>
+        <span>Timestamp: ${date}</span>
+        ${window.location.pathname.includes("account.html") ? `
+          <button class="mt-2 bg-red-600 px-3 py-1 rounded" onclick="disconnect()">Disconnect</button>
+        ` : ``}
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <button class="text-white bg-blue-600 px-4 py-2 rounded" onclick="connectAccount()">Connect Account</button>
+    `;
+  }
 }
 
-// Global logout function
-function logout() {
+// Simulated Account Connect
+function connectAccount() {
+  const randomUsername = "user" + Math.floor(Math.random() * 10000);
+  const user = { id: uuidv4(), username: randomUsername };
+  saveAccountSession(user);
+  Toastify({ text: "Account Connected!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
+  renderAccountConnectButton();
+}
+
+// Disconnect only on account.html
+function disconnect() {
   clearAccountSession();
-  Toastify({
-    text: "Logged out!",
-    duration: 2000,
-    backgroundColor: "#f87171"
-  }).showToast();
-
-  updateHeaderLoginStatus();
-
-  if (window.location.href.includes("account.html")) {
-    const statusEl = document.getElementById("status-info");
-    if (statusEl) statusEl.textContent = "Logged out successfully.";
-  } else {
-    location.reload();
+  Toastify({ text: "Disconnected!", duration: 2000, backgroundColor: "#f87171" }).showToast();
+  renderAccountConnectButton();
+  if (window.location.pathname.includes("account.html")) {
+    const status = document.getElementById("status-info");
+    if (status) status.textContent = "Disconnected successfully.";
   }
 }
