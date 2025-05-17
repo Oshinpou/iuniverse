@@ -210,5 +210,37 @@ $(document).ready(function () {
   }
 });
 </script>
+<script>
+  // On page load, check if user is logged in
+  document.addEventListener("DOMContentLoaded", function () {
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+    // If user is logged in
+    if (user && user.accountId && user.loginTimestamp) {
+      $("#account-connect-button").html(`
+        <div class="icon-box">
+          <div class="icon-text">Account ID</div>
+          <i class="fas fa-user-circle"></i>
+          <div class="icon-text" style="font-size: 10px;">${user.accountId}</div>
+          <div class="icon-text" style="font-size: 10px;">${dayjs(user.loginTimestamp).fromNow()}</div>
+        </div>
+      `);
+    } else {
+      // Not logged in, hide account details
+      $("#account-connect-button").html(`
+        <div class="icon-box" onclick="window.location.href='account.html'">
+          <div class="icon-text">Login</div>
+          <i class="fas fa-sign-in-alt"></i>
+        </div>
+      `);
+    }
+  });
+
+  function logoutUser() {
+    localStorage.removeItem("loggedInUser");
+    Toastify({ text: "Logged out", style: { background: "orange" } }).showToast();
+    window.location.href = "account.html"; // Optional: Redirect to login
+  }
+</script>
 </body>
 </html>
