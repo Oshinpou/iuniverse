@@ -180,6 +180,29 @@
     </div>
   </div>
 </div>
+<script>
+// Fetch login status from localStorage (set in account.html after login)
+document.addEventListener("DOMContentLoaded", () => {
+  const accountStatus = document.getElementById("accountStatus");
+  const loginBox = document.querySelector('.icon-box[onclick*="account.html"]');
 
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  if (user && user.id) {
+    // Update UI with user info
+    accountStatus.textContent = `Logged in as: ${user.name || user.id}`;
+
+    // Change login icon to Logout
+    loginBox.querySelector('.icon-text').textContent = "Logout";
+    loginBox.querySelector('i').classList.replace("fa-sign-in-alt", "fa-sign-out-alt");
+    
+    // Attach logout handler
+    loginBox.onclick = () => {
+      localStorage.removeItem("loggedInUser");
+      location.reload(); // Refresh header after logout
+    };
+  }
+});
+</script>
 </body>
 </html>
