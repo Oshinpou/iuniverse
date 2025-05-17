@@ -148,17 +148,18 @@
     }
 
     let emailExists = false;
-    let phoneExists = false;
+    let fullPhoneExists = false;
 
     gun.get('imacx-accounts').map().once(acc => {
       if (!acc) return;
 
-      // Normalize values for comparison
       const accEmail = acc.email?.toLowerCase();
       const accPhone = acc.phone;
 
       if (accEmail === email) emailExists = true;
-      if (accPhone === fullPhone) phoneExists = true;
+
+      // Check full phone (country code + local number)
+      if (accPhone === fullPhone) fullPhoneExists = true;
     });
 
     setTimeout(() => {
@@ -167,12 +168,12 @@
         return;
       }
 
-      if (phoneExists) {
+      if (fullPhoneExists) {
         msg.innerText = 'Phone number already in use.';
         return;
       }
 
-      // All good, create account
+      // Create account if all unique
       accountRef.put({
         username,
         email,
@@ -184,12 +185,10 @@
       msg.innerText = 'Account created successfully!';
     }, 1500);
   });
-} 
-      
-
-        
+}
   
-    function login() {
+
+   function login() {
       const username = document.getElementById('login-user').value.trim();
       const password = document.getElementById('login-pass').value;
       const msg = document.getElementById('login-msg');
