@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7,7 +6,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -38,257 +36,205 @@
     input::placeholder {
       color: #888;
     }
-
     input, select {
-  color: #000 !important;
-  background-color: #fff;
+      color: #000 !important;
+      background-color: #fff;
     }
   </style>
 </head>
 <body>
   <section class="p-6 max-w-4xl mx-auto">
-    <h1 class="text-5xl text-center title-glow mb-10">IMACX Account Portal</h1>
+    <h1 class="text-5xl text-center title-glow mb-10">IMACX Account Portal</h1><!-- Login -->
+<div class="glass-box">
+  <h2 class="text-2xl mb-4">Login</h2>
+  <input id="login-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+  <input id="login-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
+  <button onclick="login()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Login</button>
+  <p id="login-msg" class="text-red-500"></p>
+</div>
 
-    <!-- Login -->
-    <div class="glass-box">
-      <h2 class="text-2xl mb-4">Login</h2>
-      <input id="login-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black>
-      <input id="login-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black>
-      <button onclick="login()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Login</button>
-      <p id="login-msg" class="text-red-500"></p>
-    </div>
+<!-- Signup -->
+<div class="glass-box">
+  <h2 class="text-2xl mb-4">Sign Up</h2>
+  <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+  <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
+  <div class="flex gap-2 mb-4">
+    <select id="signup-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
+      <option value="+91">+91 India</option>
+      <option value="+1">+1 USA</option>
+      <option value="+44">+44 UK</option>
+    </select>
+    <input id="signup-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
+  </div>
+  <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
+  <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded bg-white text-black">
+  <button onclick="signup()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Sign Up</button>
+  <p id="signup-msg" class="text-red-500"></p>
+</div>
 
-    <!-- Signup -->
-    <div class="glass-box">
-      <h2 class="text-2xl mb-4">Sign Up</h2>
-      <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
-      <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black
+<!-- Recover Password -->
+<div id="recover-password-box" class="glass-box">
+  <h2 class="text-2xl mb-4">Recover Password</h2>
+  <input id="recover-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+  <input id="recover-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
+  <div class="flex gap-2 mb-4">
+    <select id="recover-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
+      <option value="+91">+91 India</option>
+      <option value="+1">+1 USA</option>
+      <option value="+44">+44 UK</option>
+    </select>
+    <input id="recover-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
+  </div>
+  <button onclick="recoverPassword()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Password</button>
+  <p id="recover-msg" class="text-red-500"></p>
+</div>
 
->
-      <div class="flex gap-2 mb-4">
-        <select id="signup-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
-          <option value="+91">+91 India</option>
-          <option value="+1">+1 USA</option>
-          <option value="+44">+44 UK</option>
-        </select>
-        <input id="signup-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black
+<!-- Recover Username -->
+<div id="recover-username-box" class="glass-box">
+  <h2 class="text-2xl mb-4">Recover Username</h2>
+  <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
+  <div class="flex gap-2 mb-4">
+    <select id="username-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
+      <option value="+91">+91 India</option>
+      <option value="+1">+1 USA</option>
+      <option value="+44">+44 UK</option>
+    </select>
+    <input id="username-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
+  </div>
+  <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
+  <button onclick="recoverUsername()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Username</button>
+  <p id="username-msg" class="text-red-500"></p>
+</div>
 
->
-      </div>
-      <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black
+<!-- Account Status -->
+<div class="glass-box">
+  <h2 class="text-2xl mb-4">Account Status</h2>
+  <p id="status-info" class="text-gray-400"></p>
+</div>
 
->
-      <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded bg-white text-black
+  </section>  <script>
+    const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
 
->
-      <button onclick="signup()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Sign Up</button>
-      <p id="signup-msg" class="text-red-500"></p>
-    </div>
-
-    <!-- Recover Password -->
-    <div id="recover-password-box" class="glass-box">
-      <h2 class="text-2xl mb-4">Recover Password</h2>
-      <input id="recover-user" type="text" placeholder="Username " class="w-full p-2 rounded bg-white text-black
-
->
-      <input id="recover-email" type="email" placeholder="Email " class="w-full p-2 rounded bg-white text-black
-
->
-      <div class="flex gap-2 mb-4">
-        <select id="recover-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
-          <option value="+91">+91 India</option>
-          <option value="+1">+1 USA</option>
-          <option value="+44">+44 UK</option>
-        </select>
-        <input id="recover-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black
-
->
-      </div>
-      <button onclick="recoverPassword()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Password</button>
-      <p id="recover-msg" class="text-red-500"></p>
-    </div>
-
-    <!-- Recover Username -->
-    <div id="recover-username-box" class="glass-box">
-      <h2 class="text-2xl mb-4">Recover Username</h2>
-      <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black
-
->
-      <div class="flex gap-2 mb-4">
-        <select id="username-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
-          <option value="+91">+91 India</option>
-          <option value="+1">+1 USA</option>
-          <option value="+44">+44 UK</option>
-        </select>
-        <input id="username-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black
-
->
-      </div>
-      <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black
-
->
-      <button onclick="recoverUsername()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Username</button>
-      <p id="username-msg" class="text-red-500"></p>
-    </div>
-
-    <!-- Account Status -->
-    <div class="glass-box">
-      <h2 class="text-2xl mb-4">Account Status</h2>
-      <p id="status-info" class="text-gray-400"></p>
-    </div>
-  </section>
-   
-    <script>
-  // Initialize GunDB with relay peers for global syncing
-  const gun = Gun({
-    peers: ['https://gun-manhattan.herokuapp.com/gun'] // Add more Gun relay servers if needed
-  });
-
-  function timestampIST() {
-    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-    return new Date(date).toISOString();
-  }
-
-  // Signup Function
-  async function signup() {
-    const username = document.getElementById('signup-user').value.trim();
-    const email = document.getElementById('signup-email').value.trim().toLowerCase();
-    const phone = document.getElementById('signup-country-code').value.trim() + document.getElementById('signup-phone').value.trim();
-    const password = document.getElementById('signup-pass').value;
-    const confirm = document.getElementById('signup-confirm').value;
-    const msg = document.getElementById('signup-msg');
-
-    if (!username || !email || !phone || !password || !confirm) {
-      msg.innerText = 'All fields are required.';
-      return;
+    function timestampIST() {
+      const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+      return new Date(date).toISOString();
     }
 
-    if (password !== confirm) {
-      msg.innerText = 'Passwords do not match.';
-      return;
-    }
+    function signup() {
+      const username = document.getElementById('signup-user').value.trim();
+      const email = document.getElementById('signup-email').value.trim().toLowerCase();
+      const phone = document.getElementById('signup-country-code').value + document.getElementById('signup-phone').value.trim();
+      const password = document.getElementById('signup-pass').value;
+      const confirm = document.getElementById('signup-confirm').value;
+      const msg = document.getElementById('signup-msg');
 
-    const accountRef = gun.get('imacx-accounts').get(username);
-
-    accountRef.once(async data => {
-      if (data) {
-        msg.innerText = 'Username already exists.';
+      if (!username || !email || !phone || !password || !confirm) {
+        msg.innerText = 'All fields are required.';
+        return;
+      }
+      if (password !== confirm) {
+        msg.innerText = 'Passwords do not match.';
         return;
       }
 
-      // Check if email or phone already used
-      let emailExists = false, phoneExists = false;
-      await gun.get('imacx-accounts').map().once((acc) => {
-        if (!acc) return;
-        if (acc.email === email) emailExists = true;
-        if (acc.phone === phone) phoneExists = true;
+      const accountRef = gun.get('imacx-accounts').get(username);
+      accountRef.once(async data => {
+        if (data) {
+          msg.innerText = 'Username already exists.';
+          return;
+        }
+
+        let emailExists = false, phoneExists = false;
+        await gun.get('imacx-accounts').map().once(acc => {
+          if (!acc) return;
+          if (acc.email === email) emailExists = true;
+          if (acc.phone === phone) phoneExists = true;
+        });
+
+        if (emailExists) {
+          msg.innerText = 'Email already in use.';
+          return;
+        }
+        if (phoneExists) {
+          msg.innerText = 'Phone number already in use.';
+          return;
+        }
+
+        const userData = {
+          username,
+          email,
+          phone,
+          password,
+          created: timestampIST()
+        };
+
+        accountRef.put(userData);
+        msg.innerText = 'Account created successfully!';
+      });
+    }
+
+    function login() {
+      const username = document.getElementById('login-user').value.trim();
+      const password = document.getElementById('login-pass').value;
+      const msg = document.getElementById('login-msg');
+
+      if (!username || !password) {
+        msg.innerText = 'Enter both username and password.';
+        return;
+      }
+
+      gun.get('imacx-accounts').get(username).once(data => {
+        if (data && data.password === password) {
+          msg.innerText = 'Login successful!';
+          document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+        } else {
+          msg.innerText = 'Invalid login credentials.';
+        }
+      });
+    }
+
+    function recoverPassword() {
+      const username = document.getElementById('recover-user').value.trim();
+      const email = document.getElementById('recover-email').value.trim().toLowerCase();
+      const phone = document.getElementById('recover-country-code').value + document.getElementById('recover-phone').value.trim();
+      const msg = document.getElementById('recover-msg');
+
+      if (!username || !email || !phone) {
+        msg.innerText = 'All fields are required.';
+        return;
+      }
+
+      gun.get('imacx-accounts').get(username).once(data => {
+        if (data && data.email === email && data.phone === phone) {
+          msg.innerText = `Your password is: ${data.password}`;
+        } else {
+          msg.innerText = 'No matching account found.';
+        }
+      });
+    }
+
+    function recoverUsername() {
+      const email = document.getElementById('username-recovery-email').value.trim().toLowerCase();
+      const phone = document.getElementById('username-country-code').value + document.getElementById('username-phone').value.trim();
+      const password = document.getElementById('username-recovery-pass').value;
+      const msg = document.getElementById('username-msg');
+
+      if (!email || !phone || !password) {
+        msg.innerText = 'All fields are required.';
+        return;
+      }
+
+      let found = false;
+      gun.get('imacx-accounts').map().once(data => {
+        if (data && data.email === email && data.phone === phone && data.password === password) {
+          msg.innerText = `Your username is: ${data.username}`;
+          found = true;
+        }
       });
 
-      if (emailExists) {
-        msg.innerText = 'Email already in use.';
-        return;
-      }
-      if (phoneExists) {
-        msg.innerText = 'Phone number already in use.';
-        return;
-      }
-
-      const userData = {
-        username,
-        email,
-        phone,
-        password,
-        created: timestampIST()
-      };
-
-      accountRef.put(userData);
-      msg.innerText = 'Account created successfully!';
-    });
-  }
-
-  // Login Function
-  function login() {
-    const username = document.getElementById('login-user').value.trim();
-    const password = document.getElementById('login-pass').value;
-    const msg = document.getElementById('login-msg');
-
-    if (!username || !password) {
-      msg.innerText = 'Enter both username and password.';
-      return;
+      setTimeout(() => {
+        if (!found) msg.innerText = 'No matching account found.';
+      }, 1000);
     }
-
-    gun.get('imacx-accounts').get(username).once(data => {
-      if (data && data.password === password) {
-        msg.innerText = 'Login successful!';
-        document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
-      } else {
-        msg.innerText = 'Invalid login credentials.';
-      }
-    });
-  }
-
-  // Recover Password
-  function recoverPassword() {
-    const username = document.getElementById('recover-user').value.trim();
-    const email = document.getElementById('recover-email').value.trim().toLowerCase();
-    const phone = document.getElementById('recover-country-code').value.trim() + document.getElementById('recover-phone').value.trim();
-    const msg = document.getElementById('recover-msg');
-
-    if (!username || !email || !phone) {
-      msg.innerText = 'All fields are required.';
-      return;
-    }
-
-    gun.get('imacx-accounts').get(username).once(data => {
-      if (!data) {
-        msg.innerText = 'No account found with this username.';
-        return;
-      }
-
-      if (data.email === email && data.phone === phone) {
-        msg.innerText = `Your password is: ${data.password}`;
-      } else {
-        msg.innerText = 'Email or phone number does not match.';
-      }
-    });
-  }
-
-  // Recover Username
-  function recoverUsername() {
-    const email = document.getElementById('recover-email-username').value.trim().toLowerCase();
-    const phone = document.getElementById('recover-country-code-username').value.trim() + document.getElementById('recover-phone-username').value.trim();
-    const msg = document.getElementById('recover-username-msg');
-
-    if (!email || !phone) {
-      msg.innerText = 'All fields are required.';
-      return;
-    }
-
-    let found = false;
-    gun.get('imacx-accounts').map().once((data, key) => {
-      if (!data) return;
-      if (data.email === email && data.phone === phone) {
-        msg.innerText = `Your username is: ${key}`;
-        found = true;
-      }
-    });
-
-    setTimeout(() => {
-      if (!found) msg.innerText = 'No matching account found.';
-    }, 2000);
-  }
-
-  // Admin View All Accounts
-  function viewAllAccounts() {
-    const container = document.getElementById('admin-accounts');
-    container.innerHTML = '';
-    gun.get('imacx-accounts').map().once((data, key) => {
-      if (!data) return;
-      const div = document.createElement('div');
-      div.innerText = `User: ${key}, Email: ${data.email}, Phone: ${data.phone}`;
-      container.appendChild(div);
-    });
-  }
-</script> 
-</body>
+  </script></body>
 </html>
