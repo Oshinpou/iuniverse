@@ -227,6 +227,17 @@
       });
     }
 
+   
+// Example: after login success
+const user = {
+  id: "user123",          // replace with real ID
+  name: "John Doe"        // optional: full name
+};
+
+localStorage.setItem("loggedInUser", JSON.stringify(user));
+window.location.href = "index.html"; // or wherever the user should go
+
+    
     function recoverPassword() {
       const username = document.getElementById('recover-user').value.trim();
       const email = document.getElementById('recover-email').value.trim().toLowerCase();
