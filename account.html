@@ -120,61 +120,75 @@
       return new Date(date).toISOString();
     }
 
-    function signup() {
-      const username = document.getElementById('signup-user').value.trim();
-      const email = document.getElementById('signup-email').value.trim().toLowerCase();
-      const phone = document.getElementById('signup-country-code').value + document.getElementById('signup-phone').value.trim();
-      const password = document.getElementById('signup-pass').value;
-      const confirm = document.getElementById('signup-confirm').value;
-      const msg = document.getElementById('signup-msg');
+   function signup() {
+  const username = document.getElementById('signup-user').value.trim().toLowerCase();
+  const email = document.getElementById('signup-email').value.trim().toLowerCase();
+  const countryCode = document.getElementById('signup-country-code').value.trim();
+  const localPhone = document.getElementById('signup-phone').value.trim();
+  const fullPhone = countryCode + localPhone;
+  const password = document.getElementById('signup-pass').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  const msg = document.getElementById('signup-msg');
 
-      if (!username || !email || !phone || !password || !confirm) {
-        msg.innerText = 'All fields are required.';
-        return;
-      }
-      if (password !== confirm) {
-        msg.innerText = 'Passwords do not match.';
-        return;
-      }
+  if (!username || !email || !countryCode || !localPhone || !password || !confirm) {
+    msg.innerText = 'All fields are required.';
+    return;
+  }
 
-      const accountRef = gun.get('imacx-accounts').get(username);
-      accountRef.once(async data => {
-        if (data) {
-          msg.innerText = 'Username already exists.';
-          return;
-        }
+  if (password !== confirm) {
+    msg.innerText = 'Passwords do not match.';
+    return;
+  }
 
-        let emailExists = false, phoneExists = false;
-        await gun.get('imacx-accounts').map().once(acc => {
-          if (!acc) return;
-          if (acc.email === email) emailExists = true;
-          if (acc.phone === phone) phoneExists = true;
-        });
-
-        if (emailExists) {
-          msg.innerText = 'Email already in use.';
-          return;
-        }
-        if (phoneExists) {
-          msg.innerText = 'Phone number already in use.';
-          return;
-        }
-
-else console.log("similar credentials");
-        
-        const userData = {
-          username,
-          email,
-          phone,
-          password,
-          created: timestampIST()
-        };
-
-        accountRef.put(userData);
-        msg.innerText = 'Account created successfully!';
-      });
+  const accountRef = gun.get('imacx-accounts').get(username);
+  accountRef.once(async data => {
+    if (data) {
+      msg.innerText = 'Username already exists.';
+      return;
     }
 
+    let emailExists = false;
+    let phoneExists = false;
+
+    gun.get('imacx-accounts').map().once(acc => {
+      if (!acc) return;
+
+      // Normalize values for comparison
+      const accEmail = acc.email?.toLowerCase();
+      const accPhone = acc.phone;
+
+      if (accEmail === email) emailExists = true;
+      if (accPhone === fullPhone) phoneExists = true;
+    });
+
+    setTimeout(() => {
+      if (emailExists) {
+        msg.innerText = 'Email already in use.';
+        return;
+      }
+
+      if (phoneExists) {
+        msg.innerText = 'Phone number already in use.';
+        return;
+      }
+
+      // All good, create account
+      accountRef.put({
+        username,
+        email,
+        phone: fullPhone,
+        password,
+        createdAt: Date.now()
+      });
+
+      msg.innerText = 'Account created successfully!';
+    }, 1500);
+  });
+} 
+      
+
+        
+  
     function login() {
       const username = document.getElementById('login-user').value.trim();
       const password = document.getElementById('login-pass').value;
