@@ -61,6 +61,16 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-20px); }
     }
+ 
+  /* Add this inside the <style> tag */
+.hero-logo {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 50px;
+  height: auto;
+  z-index: 50;
+}
   </style>
 </head>
 
@@ -75,6 +85,8 @@
     <!-- Floating Particles (Optional: Canvas or animated dots) -->
     <canvas id="stars" class="absolute top-0 left-0 w-full h-full z-0"></canvas>
 
+    <img src="icon.png" alt="IMACX Logo" class="hero-logo">
+   
     <div class="z-10 px-6">
       <h1 class="text-7xl md:text-9xl font-bold title-glow">IMACX</h1>
       <p class="text-xl md:text-2xl mt-4 text-gray-300">Crafting the Billionaire Experience</p>
