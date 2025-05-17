@@ -137,171 +137,158 @@
       <p id="status-info" class="text-gray-400"></p>
     </div>
   </section>
-
-  <script>
-    const gun = Gun();
-
-    function timestampIST() {
-      const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-      return new Date(date).toISOString();
-    }
-
-  function signup() {
-  const username = document.getElementById('signup-user').value.trim();
-  const email = document.getElementById('signup-email').value.trim().toLowerCase();
-  const phone = document.getElementById('signup-phone').value.trim();
-  const countryCode = document.getElementById('signup-country-code').value.trim();
-  const password = document.getElementById('signup-pass').value;
-  const confirm = document.getElementById('signup-confirm').value;
-  const msg = document.getElementById('signup-msg');
-
-  if (!username || !email || !phone || !password || !confirm || !countryCode) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
-
-  if (password !== confirm) {
-    msg.innerText = 'Passwords do not match.';
-    return;
-  }
-
-  const userKey = username;
-  const fullPhone = countryCode + phone;
-
-  gun.get('imacx-accounts').get(userKey).once(existingUser => {
-    if (existingUser) {
-      msg.innerText = 'Username already exists.';
-      return;
-    } else {
-      let emailExists = false;
-      let phoneExists = false;
-      let checkCount = 0;
-      let checkCompleted = false;
-
-      // Check across existing accounts
-      gun.get('imacx-accounts').map().once((user, key) => {
-        if (checkCompleted) return;
-        checkCount++;
-
-        if (user) {
-          if (user.email === email) emailExists = true;
-          if (user.phone === fullPhone) phoneExists = true;
-        }
-
-        // If checked enough users, finish
-        if (checkCount > 20) {
-          checkCompleted = true;
-          finishCheck();
-        }
-      });
-
-      // Fallback in case map doesn’t reach enough entries
-      setTimeout(() => {
-        if (!checkCompleted) {
-          checkCompleted = true;
-          finishCheck();
-        }
-      }, 2000); // 2 seconds
-
-      function finishCheck() {
-        if (emailExists) {
-          msg.innerText = 'Email already exists.';
-          return;
-        }
-        if (phoneExists) {
-          msg.innerText = 'Phone number with this country code already exists.';
-          return;
-        }
-
-        // Create new user
-        const user = {
-          username,
-          email,
-          phone: fullPhone,
-          password,
-          created: timestampIST()
-        };
-        gun.get('imacx-accounts').get(userKey).put(user);
-        msg.innerText = 'Account created successfully!';
-      }
-    }
+   
+    <script>
+  // Initialize GunDB with relay peers for global syncing
+  const gun = Gun({
+    peers: ['https://gun-manhattan.herokuapp.com/gun'] // Add more Gun relay servers if needed
   });
-}
-  
 
-  
-      
- function login() {
-      const username = document.getElementById('login-user').value.trim();
-      const password = document.getElementById('login-pass').value;
-      const msg = document.getElementById('login-msg');
-
-      if (!username || !password) {
-        msg.innerText = 'Enter both username and password.';
-        return;
-      }
-
-      gun.get('imacx-accounts').get(username).once(data => {
-        if (data && data.password === password) {
-          msg.innerText = 'Login successful!';
-          document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
-        } else {
-          msg.innerText = 'Invalid login credentials.';
-        }
-      });
-    }
-
-    function recoverPassword() {
-      const username = document.getElementById('recover-user').value.trim();
-      const email = document.getElementById('recover-email').value.trim().toLowerCase();
-      const phone = document.getElementById('recover-country-code').value + document.getElementById('recover-phone').value.trim();
-      const msg = document.getElementById('recover-msg');
-
-      if (!username || !email || !phone) {
-        msg.innerText = 'Please fill all fields.';
-        return;
-      }
-
-      gun.get('imacx-accounts').get(username).once(data => {
-        if (!data) {
-          msg.innerText = 'No account found with that username.';
-          return;
-        }
-
-        if (data.email === email && data.phone === phone) {
-          msg.innerText = `Your password is: ${data.password}`;
-        } else {
-          msg.innerText = 'Credentials do not match. Cannot recover password.';
-        }
-      });
-    }
-
-    function recoverPassword() {
-  const username = document.getElementById('recover-user').value.trim();
-  const email = document.getElementById('recover-email').value.trim().toLowerCase();
-  const countryCode = document.getElementById('recover-country-code').value.trim();
-  const phone = document.getElementById('recover-phone').value.trim();
-  const fullPhone = countryCode + phone;
-  const msg = document.getElementById('recover-msg');
-
-  if (!username || !email || !phone) {
-    msg.innerText = 'All fields are required.';
-    return;
+  function timestampIST() {
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    return new Date(date).toISOString();
   }
 
-  gun.get('imacx-accounts').get(username).once(user => {
-    if (!user) {
-      msg.innerText = 'No account found with this username.';
+  // Signup Function
+  async function signup() {
+    const username = document.getElementById('signup-user').value.trim();
+    const email = document.getElementById('signup-email').value.trim().toLowerCase();
+    const phone = document.getElementById('signup-country-code').value.trim() + document.getElementById('signup-phone').value.trim();
+    const password = document.getElementById('signup-pass').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    const msg = document.getElementById('signup-msg');
+
+    if (!username || !email || !phone || !password || !confirm) {
+      msg.innerText = 'All fields are required.';
       return;
     }
 
-    if (user.email === email && user.phone === fullPhone) {
-      msg.innerText = `Your password is: ${user.password}`;
-    } else {
-      msg.innerText = 'Email or phone number does not match.';
+    if (password !== confirm) {
+      msg.innerText = 'Passwords do not match.';
+      return;
     }
-  });
-}
-  </script>
+
+    const accountRef = gun.get('imacx-accounts').get(username);
+
+    accountRef.once(async data => {
+      if (data) {
+        msg.innerText = 'Username already exists.';
+        return;
+      }
+
+      // Check if email or phone already used
+      let emailExists = false, phoneExists = false;
+      await gun.get('imacx-accounts').map().once((acc) => {
+        if (!acc) return;
+        if (acc.email === email) emailExists = true;
+        if (acc.phone === phone) phoneExists = true;
+      });
+
+      if (emailExists) {
+        msg.innerText = 'Email already in use.';
+        return;
+      }
+      if (phoneExists) {
+        msg.innerText = 'Phone number already in use.';
+        return;
+      }
+
+      const userData = {
+        username,
+        email,
+        phone,
+        password,
+        created: timestampIST()
+      };
+
+      accountRef.put(userData);
+      msg.innerText = 'Account created successfully!';
+    });
+  }
+
+  // Login Function
+  function login() {
+    const username = document.getElementById('login-user').value.trim();
+    const password = document.getElementById('login-pass').value;
+    const msg = document.getElementById('login-msg');
+
+    if (!username || !password) {
+      msg.innerText = 'Enter both username and password.';
+      return;
+    }
+
+    gun.get('imacx-accounts').get(username).once(data => {
+      if (data && data.password === password) {
+        msg.innerText = 'Login successful!';
+        document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+      } else {
+        msg.innerText = 'Invalid login credentials.';
+      }
+    });
+  }
+
+  // Recover Password
+  function recoverPassword() {
+    const username = document.getElementById('recover-user').value.trim();
+    const email = document.getElementById('recover-email').value.trim().toLowerCase();
+    const phone = document.getElementById('recover-country-code').value.trim() + document.getElementById('recover-phone').value.trim();
+    const msg = document.getElementById('recover-msg');
+
+    if (!username || !email || !phone) {
+      msg.innerText = 'All fields are required.';
+      return;
+    }
+
+    gun.get('imacx-accounts').get(username).once(data => {
+      if (!data) {
+        msg.innerText = 'No account found with this username.';
+        return;
+      }
+
+      if (data.email === email && data.phone === phone) {
+        msg.innerText = `Your password is: ${data.password}`;
+      } else {
+        msg.innerText = 'Email or phone number does not match.';
+      }
+    });
+  }
+
+  // Recover Username
+  function recoverUsername() {
+    const email = document.getElementById('recover-email-username').value.trim().toLowerCase();
+    const phone = document.getElementById('recover-country-code-username').value.trim() + document.getElementById('recover-phone-username').value.trim();
+    const msg = document.getElementById('recover-username-msg');
+
+    if (!email || !phone) {
+      msg.innerText = 'All fields are required.';
+      return;
+    }
+
+    let found = false;
+    gun.get('imacx-accounts').map().once((data, key) => {
+      if (!data) return;
+      if (data.email === email && data.phone === phone) {
+        msg.innerText = `Your username is: ${key}`;
+        found = true;
+      }
+    });
+
+    setTimeout(() => {
+      if (!found) msg.innerText = 'No matching account found.';
+    }, 2000);
+  }
+
+  // Admin View All Accounts
+  function viewAllAccounts() {
+    const container = document.getElementById('admin-accounts');
+    container.innerHTML = '';
+    gun.get('imacx-accounts').map().once((data, key) => {
+      if (!data) return;
+      const div = document.createElement('div');
+      div.innerText = `User: ${key}, Email: ${data.email}, Phone: ${data.phone}`;
+      container.appendChild(div);
+    });
+  }
+</script> 
 </body>
 </html>
