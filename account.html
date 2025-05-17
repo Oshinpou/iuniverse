@@ -112,7 +112,26 @@
   <p id="status-info" class="text-gray-400"></p>
 </div>
 
-  </section>  <script>
+  </section> 
+  
+  <div id="header-placeholder"></div>
+ <script>
+  fetch("header.html")
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Header load failed");
+      }
+      return response.text();
+    })
+    .then(data => {
+      document.getElementById("header-placeholder").innerHTML = data;
+    })
+    .catch(error => {
+      console.error("Error loading header:", error);
+    });
+ </script>
+  
+  <script>
     const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
 
     function timestampIST() {
