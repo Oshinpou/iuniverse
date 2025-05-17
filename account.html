@@ -38,11 +38,6 @@
     input::placeholder {
       color: #888;
     }
-  
-  input, select {
-  color: black;
-  font-color: black;
-}
 
     input, select {
   color: #000 !important;
@@ -57,8 +52,8 @@
     <!-- Login -->
     <div class="glass-box">
       <h2 class="text-2xl mb-4">Login</h2>
-      <input id="login-user" type="text" placeholder="Username" class="w-full text-black p-2 rounded">
-      <input id="login-pass" type="password" placeholder="Password" class="w-full text-black p-2 rounded">
+      <input id="login-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black>
+      <input id="login-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black>
       <button onclick="login()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Login</button>
       <p id="login-msg" class="text-red-500"></p>
     </div>
@@ -66,10 +61,8 @@
     <!-- Signup -->
     <div class="glass-box">
       <h2 class="text-2xl mb-4">Sign Up</h2>
-      <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded" text-black bg-white
-
->
-      <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded" text-black bg-white
+      <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+      <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black
 
 >
       <div class="flex gap-2 mb-4">
@@ -78,14 +71,14 @@
           <option value="+1">+1 USA</option>
           <option value="+44">+44 UK</option>
         </select>
-        <input id="signup-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded" text-black bg-white
+        <input id="signup-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black
 
 >
       </div>
-      <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded" text-black bg-white
+      <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black
 
 >
-      <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded" text-black bg-white
+      <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded bg-white text-black
 
 >
       <button onclick="signup()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Sign Up</button>
@@ -95,10 +88,10 @@
     <!-- Recover Password -->
     <div id="recover-password-box" class="glass-box">
       <h2 class="text-2xl mb-4">Recover Password</h2>
-      <input id="recover-user" type="text" placeholder="Username " class="w-full p-2 rounded" text-black bg-white
+      <input id="recover-user" type="text" placeholder="Username " class="w-full p-2 rounded bg-white text-black
 
 >
-      <input id="recover-email" type="email" placeholder="Email " class="w-full p-2 rounded" text-black bg-white
+      <input id="recover-email" type="email" placeholder="Email " class="w-full p-2 rounded bg-white text-black
 
 >
       <div class="flex gap-2 mb-4">
@@ -107,7 +100,7 @@
           <option value="+1">+1 USA</option>
           <option value="+44">+44 UK</option>
         </select>
-        <input id="recover-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded" text-black bg-white
+        <input id="recover-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black
 
 >
       </div>
@@ -118,7 +111,7 @@
     <!-- Recover Username -->
     <div id="recover-username-box" class="glass-box">
       <h2 class="text-2xl mb-4">Recover Username</h2>
-      <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded" text-black bg-white
+      <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black
 
 >
       <div class="flex gap-2 mb-4">
@@ -127,11 +120,11 @@
           <option value="+1">+1 USA</option>
           <option value="+44">+44 UK</option>
         </select>
-        <input id="username-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded" text-black bg-white
+        <input id="username-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black
 
 >
       </div>
-      <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded" text-black bg-white
+      <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black
 
 >
       <button onclick="recoverUsername()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Username</button>
@@ -173,39 +166,44 @@
   }
 
   const userKey = username;
+  const fullPhone = countryCode + phone;
 
-  // Check if username exists
   gun.get('imacx-accounts').get(userKey).once(existingUser => {
     if (existingUser) {
       msg.innerText = 'Username already exists.';
       return;
     } else {
-      // Now check email and phone uniqueness across all users
       let emailExists = false;
       let phoneExists = false;
-      const fullPhone = countryCode + phone;
+      let checkCount = 0;
+      let checkCompleted = false;
 
-      // This is asynchronous, so use a promise for cleaner handling
-      new Promise((resolve) => {
-        gun.get('imacx-accounts').map().once(user => {
-          if (!user) return;
+      // Check across existing accounts
+      gun.get('imacx-accounts').map().once((user, key) => {
+        if (checkCompleted) return;
+        checkCount++;
 
-          // Check email
-          if (user.email === email) {
-            emailExists = true;
-          }
+        if (user) {
+          if (user.email === email) emailExists = true;
+          if (user.phone === fullPhone) phoneExists = true;
+        }
 
-          // Check phone with country code
-          if (user.phone === fullPhone) {
-            phoneExists = true;
-          }
+        // If checked enough users, finish
+        if (checkCount > 20) {
+          checkCompleted = true;
+          finishCheck();
+        }
+      });
 
-          else console.log("phone number already exists");
+      // Fallback in case map doesn’t reach enough entries
+      setTimeout(() => {
+        if (!checkCompleted) {
+          checkCompleted = true;
+          finishCheck();
+        }
+      }, 2000); // 2 seconds
 
-          // After checking all users, resolve
-          resolve();
-        });
-      }).then(() => {
+      function finishCheck() {
         if (emailExists) {
           msg.innerText = 'Email already exists.';
           return;
@@ -215,7 +213,7 @@
           return;
         }
 
-        // If all unique, create user
+        // Create new user
         const user = {
           username,
           email,
@@ -225,11 +223,13 @@
         };
         gun.get('imacx-accounts').get(userKey).put(user);
         msg.innerText = 'Account created successfully!';
-      });
+      }
     }
   });
-}  
+}
+  
 
+  
       
  function login() {
       const username = document.getElementById('login-user').value.trim();
@@ -276,15 +276,29 @@
       });
     }
 
-    function recoverUsername() {
-  const email = document.getElementById('username-recovery-email').value.trim().toLowerCase();
-  const phone = document.getElementById('username-country-code').value + document.getElementById('username-phone').value.trim();
-  const password = document.getElementById('username-recovery-pass').value;
-  const msg = document.getElementById('username-msg');
+    function recoverPassword() {
+  const username = document.getElementById('recover-user').value.trim();
+  const email = document.getElementById('recover-email').value.trim().toLowerCase();
+  const countryCode = document.getElementById('recover-country-code').value.trim();
+  const phone = document.getElementById('recover-phone').value.trim();
+  const fullPhone = countryCode + phone;
+  const msg = document.getElementById('recover-msg');
 
-  gun.get('imacx-accounts').map().once((user, key) => {
-    if (user && user.email === email && user.phone === phone && user.password === password) {
-      msg.innerText = `Your username is: ${key}`;
+  if (!username || !email || !phone) {
+    msg.innerText = 'All fields are required.';
+    return;
+  }
+
+  gun.get('imacx-accounts').get(username).once(user => {
+    if (!user) {
+      msg.innerText = 'No account found with this username.';
+      return;
+    }
+
+    if (user.email === email && user.phone === fullPhone) {
+      msg.innerText = `Your password is: ${user.password}`;
+    } else {
+      msg.innerText = 'Email or phone number does not match.';
     }
   });
 }
