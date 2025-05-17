@@ -1,7 +1,8 @@
-<!DOCTYPE html><html lang="en" class="dark">
+<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Imacx Admin Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -31,78 +32,87 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-4xl p-8 glass shadow-lg">
-    <h1 class="text-3xl font-bold gold-title text-center mb-8">Admin Dashboard - Imacx</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div>
-    <label class="block mb-1 text-sm">Search User (username/email/phone)</label>
-    <input id="searchUser" type="text" class="w-full p-2 rounded bg-gray-900 text-white border border-gray-700">
-    <button onclick="searchUser()" class="mt-2 w-full bg-yellow-500 text-black py-2 rounded font-semibold">Search</button>
+    <h1 class="text-3xl font-bold gold-title text-center mb-8">Admin Dashboard - Imacx</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block mb-1 text-sm">Search User (username/email/phone)</label>
+        <input id="searchUser" type="text" class="w-full p-2 rounded bg-gray-900 text-white border border-gray-700">
+        <button onclick="searchUser()" class="mt-2 w-full bg-yellow-500 text-black py-2 rounded font-semibold">Search</button>
+      </div>
+      <div>
+        <label class="block mb-1 text-sm">Total Users</label>
+        <div id="userCount" class="p-2 bg-gray-800 rounded">Loading...</div>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <h2 class="text-xl font-semibold mb-2">User Details</h2>
+      <pre id="userInfo" class="p-4 bg-gray-900 rounded text-sm overflow-auto max-h-96">No user selected</pre>
+    </div>
+
+    <div class="mt-4">
+      <button onclick="loadAllUsers()" class="bg-yellow-500 text-black py-2 px-4 rounded font-semibold">Load All Users</button>
+    </div>
   </div>
-  <div>
-    <label class="block mb-1 text-sm">Total Users</label>
-    <div id="userCount" class="p-2 bg-gray-800 rounded">Loading...</div>
-  </div>
-</div>
 
-<div class="mt-8">
-  <h2 class="text-xl font-semibold mb-2">User Details</h2>
-  <pre id="userInfo" class="p-4 bg-gray-900 rounded text-sm overflow-auto">No user selected</pre>
-</div>
+  <script>
+    const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
+    const db = gun.get('imacx-accounts');
 
-<div class="mt-4">
-  <button onclick="loadAllUsers()" class="bg-yellow-500 text-black py-2 px-4 rounded font-semibold">Load All Users</button>
-</div>
+    function searchUser() {
+      const input = document.getElementById('searchUser').value.trim();
+      if (!input) return alert('Enter username, email, or phone');
+      
+      document.getElementById('userInfo').innerText = 'Searching...';
+      let found = false;
 
-  </div>  <script>
-  const gun = Gun();
-  const db = gun.get('imacx-accounts');
+      db.map().once((data, key) => {
+        if (!data) return;
+        const { username, email, phone } = data;
+        if ([username, email, phone].includes(input)) {
+          found = true;
+          document.getElementById('userInfo').innerText = `User ID: ${key}\n\n${JSON.stringify(data, null, 2)}`;
+        }
+      });
 
-  function searchUser() {
-    const input = document.getElementById('searchUser').value.trim();
-    if (!input) return alert('Enter username, email, or phone');
+      setTimeout(() => {
+        if (!found) {
+          document.getElementById('userInfo').innerText = 'User not found.';
+        }
+      }, 1500);
+    }
 
-    let found = false;
-    document.getElementById('userInfo').innerText = 'Searching...';
+    function loadAllUsers() {
+      let users = [];
+      document.getElementById('userInfo').innerText = 'Loading all users...';
 
-    db.map().once((data, key) => {
-      if (!data) return;
-      if ([data.username, data.email, data.phone].includes(input)) {
-        document.getElementById('userInfo').innerText = `User ID: ${key}\n\n` + JSON.stringify(data, null, 2);
-        found = true;
-      }
-    });
+      db.map().once((data, key) => {
+        if (data) {
+          users.push({ key, data });
+        }
+      });
 
-    setTimeout(() => {
-      if (!found) document.getElementById('userInfo').innerText = 'User not found.';
-    }, 1000);
-  }
+      setTimeout(() => {
+        if (users.length === 0) {
+          document.getElementById('userInfo').innerText = 'No users found.';
+        } else {
+          const formatted = users.map(u => `User ID: ${u.key}\n${JSON.stringify(u.data, null, 2)}`).join('\n\n');
+          document.getElementById('userInfo').innerText = formatted;
+        }
+        document.getElementById('userCount').innerText = users.length;
+      }, 1500);
+    }
 
-  function loadAllUsers() {
-    let all = '';
-    let count = 0;
-    document.getElementById('userInfo').innerText = 'Loading all users...';
-
-    db.map().once((data, key) => {
-      if (data) {
-        count++;
-        all += `User ID: ${key}\n${JSON.stringify(data, null, 2)}\n\n`;
-      }
-    });
-
-    setTimeout(() => {
-      document.getElementById('userInfo').innerText = all || 'No users found.';
-      document.getElementById('userCount').innerText = count;
-    }, 1000);
-  }
-
-  window.onload = () => {
-    let count = 0;
-    db.map().once(data => {
-      if (data) count++;
-    });
-
-    setTimeout(() => {
-      document.getElementById('userCount').innerText = count;
-    }, 1000);
-  }
-</script></body>
+    window.onload = () => {
+      let count = 0;
+      db.map().once(data => {
+        if (data) count++;
+      });
+      setTimeout(() => {
+        document.getElementById('userCount').innerText = count;
+      }, 1500);
+    };
+  </script>
+</body>
 </html>
