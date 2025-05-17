@@ -138,6 +138,18 @@
   <div id="headerSticker" class="wave-header">
     <div class="header-container">
       <div id="account-connect-button"></div>
+     <div class="icon-box" onclick="logoutUser()">
+  <div class="icon-text">Logout</div>
+  <i class="fas fa-sign-out-alt"></i>
+</div>
+
+<script>
+function logoutUser() {
+  localStorage.removeItem('loggedInUser');
+  Toastify({ text: "Logged out", style: { background: "orange" } }).showToast();
+  location.reload(); // or redirect to homepage
+}
+</script>
       <div class="header-icons">
         <div class="icon-group">
           <div class="icon-box" onclick="viewAccount()"><div class="icon-text">Manage Account</div><i class="fas fa-user-cog"></i></div>
@@ -176,5 +188,27 @@
       }
     });
   </script>
+<script>
+$(document).ready(function () {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const connectBox = document.getElementById("account-connect-button");
+
+  if (user && user.id && user.timestamp) {
+    const lastLogin = new Date(user.timestamp).toLocaleString();
+    connectBox.innerHTML = `
+      <div style="color: gold; text-align: center; font-size: 14px;">
+        Logged in as <b>${user.name || user.email}</b><br>
+        <small>Since: ${lastLogin}</small>
+      </div>
+    `;
+  } else {
+    connectBox.innerHTML = `
+      <button class="btn btn-outline-light btn-sm" onclick="window.location.href='account.html'">
+        Connect Account
+      </button>
+    `;
+  }
+});
+</script>
 </body>
 </html>
