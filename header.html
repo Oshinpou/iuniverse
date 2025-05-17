@@ -137,14 +137,12 @@
 
 <div id="headerSticker">
   <div class="header-container">
-    <!-- Add inside header -->
-<div id="login-status">here</div>
-
-<!-- Load session script -->
+    <div id="account-connect-button"></div>
+<!-- Place this script block at bottom of your HTML page -->
 <script src="account-session.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    updateHeaderLoginStatus();
+    renderAccountConnectButton();
   });
 </script>
 
