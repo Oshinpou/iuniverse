@@ -1,5 +1,13 @@
 const SESSION_KEY = 'imacx-session';
 
+// UUID generator fallback (if uuidv4 is not defined globally)
+function uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
+}
+
+// Save user session
 function saveAccountSession(user) {
   const sessionData = {
     id: user.id || uuidv4(),
@@ -10,20 +18,21 @@ function saveAccountSession(user) {
   return sessionData;
 }
 
+// Get session
 function getAccountSession() {
   const data = localStorage.getItem(SESSION_KEY);
   return data ? JSON.parse(data) : null;
 }
 
+// Clear session
 function clearAccountSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-// Show Connect Button (Reusable on every page)
+// Render button in any page
 function renderAccountConnectButton() {
   const container = document.getElementById("account-connect-button");
   const session = getAccountSession();
-
   if (!container) return;
 
   if (session) {
@@ -44,22 +53,48 @@ function renderAccountConnectButton() {
   }
 }
 
-// Simulated Account Connect
+// Simulate connect
 function connectAccount() {
+  if (getAccountSession()) {
+    showToast("Already connected.", "#facc15"); // Yellow
+    return;
+  }
+
   const randomUsername = "user" + Math.floor(Math.random() * 10000);
   const user = { id: uuidv4(), username: randomUsername };
   saveAccountSession(user);
-  Toastify({ text: "Account Connected!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
+  showToast("Account Connected!", "#22c55e"); // Green
   renderAccountConnectButton();
 }
 
-// Disconnect only on account.html
+// Disconnect on account.html
 function disconnect() {
   clearAccountSession();
-  Toastify({ text: "Disconnected!", duration: 2000, backgroundColor: "#f87171" }).showToast();
+  showToast("Disconnected!", "#f87171"); // Red
   renderAccountConnectButton();
+
   if (window.location.pathname.includes("account.html")) {
     const status = document.getElementById("status-info");
     if (status) status.textContent = "Disconnected successfully.";
   }
 }
+
+// Show toast
+function showToast(message, background) {
+  if (typeof Toastify !== "undefined") {
+    Toastify({
+      text: message,
+      duration: 2000,
+      gravity: "top",
+      position: "right",
+      backgroundColor: background
+    }).showToast();
+  } else {
+    alert(message); // fallback
+  }
+}
+
+// On load: render if element exists
+window.addEventListener("DOMContentLoaded", () => {
+  renderAccountConnectButton();
+});
