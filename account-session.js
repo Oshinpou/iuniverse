@@ -1,5 +1,5 @@
 // Account Storage Helpers
-const ACCOUNT_KEY = 'imacx_active_account';
+const ACCOUNT_KEY = 'imacx_accounts';
 
 function saveAccountSession(user) {
   const sessionData = {
