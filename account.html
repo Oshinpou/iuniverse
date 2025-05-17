@@ -289,6 +289,17 @@ function handleLoginSuccess(accountId) {
   window.location.href = "index.html"; // or wherever your main page is
 }
     
+ function loginUser(userId) {
+  const sessionData = {
+    accountId: userId,
+    timestamp: new Date().toISOString()
+  };
+  localStorage.setItem('loggedInUser', JSON.stringify(sessionData));
+  Toastify({ text: "Login successful", style: { background: "green" } }).showToast();
+  window.location.href = 'account.html';
+}  
+    
+    
     function recoverPassword() {
       const username = document.getElementById('recover-user').value.trim();
       const email = document.getElementById('recover-email').value.trim().toLowerCase();
