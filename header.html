@@ -242,5 +242,31 @@ $(document).ready(function () {
     window.location.href = "account.html"; // Optional: Redirect to login
   }
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const session = JSON.parse(localStorage.getItem('loggedInUser'));
+
+    if (session && session.accountId) {
+      // Show logout button and user-based options
+      $('#account-connect-button').html(`
+        <div style="color: white; font-size: 14px; margin-bottom: 10px;">
+          Connected ID: ${session.accountId}<br>
+          Logged in at: ${dayjs(session.timestamp).format('HH:mm:ss DD-MM-YYYY')}
+        </div>
+      `);
+    } else {
+      // Hide all account-only icon-boxes or disable them if needed
+      $('.icon-box:contains("Logout")').hide();
+      $('.icon-box:contains("Manage Account")').hide();
+    }
+  });
+
+  function logoutUser() {
+    localStorage.removeItem('loggedInUser');
+    Toastify({ text: "Logged out", style: { background: "orange" } }).showToast();
+    window.location.href = 'account.html';
+  }
+</script>
+
 </body>
 </html>
