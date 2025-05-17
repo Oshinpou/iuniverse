@@ -75,7 +75,23 @@
 </head>
 
 <body>
-
+<div id="header-placeholder"></div>
+ <script>
+  fetch("header.html")
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Header load failed");
+      }
+      return response.text();
+    })
+    .then(data => {
+      document.getElementById("header-placeholder").innerHTML = data;
+    })
+    .catch(error => {
+      console.error("Error loading header:", error);
+    });
+ </script>
+  
   <!-- Hero Section -->
   <section class="relative h-screen flex items-center justify-center text-center overflow-hidden">
     <!-- 3D Orbit Circles -->
