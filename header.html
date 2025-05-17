@@ -1,0 +1,185 @@
+<html>
+<head><style>
+ body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      overflow-x: hidden;
+    }
+
+    .wave-header {
+      position: relative;
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(20, 20, 20, 0.8));
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      clip-path: ellipse(130% 100% at 50% 0%);
+      padding: 50px 20px 100px;
+      box-shadow: 0 10px 30px rgba(255, 215, 0, 0.15);
+    }
+
+    .header-title {
+      text-align: center;
+      color: gold;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 0 0 10px gold;
+      margin-bottom: 20px;
+    }
+
+    .icon-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .icon-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 15px 10px;
+      width: 100px;
+      text-align: center;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .icon-box:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 0 20px gold, 0 0 10px white;
+    }
+
+    .icon-box i {
+      font-size: 24px;
+      color: white;
+      text-shadow: 0 0 8px white;
+      margin-bottom: 8px;
+    }
+
+    .icon-text {
+      font-size: 12px;
+      color: white;
+      text-shadow: 0 0 5px white;
+    }
+
+    /* Sparkle effect */
+    .icon-box::after {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: -20%;
+      width: 140%;
+      height: 140%;
+      background: radial-gradient(circle, rgba(255,215,0,0.2), transparent 70%);
+      opacity: 0;
+      animation: sparkle 2s infinite linear;
+      pointer-events: none;
+    }
+
+    @keyframes sparkle {
+      0% { transform: rotate(0deg); opacity: 0.4; }
+      50% { opacity: 0.1; }
+      100% { transform: rotate(360deg); opacity: 0.4; }
+    }
+  
+
+
+</style></head>
+  <body>
+      <!-- header.html -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div id="headerSticker">
+  <div class="header-container">
+    <div id="accountStatus">Not logged in</div>
+    <div class="header-icons">
+      <!-- Line 1 -->
+      <div class="icon-group">
+        <div class="icon-box" onclick="viewAccount()">
+          <div class="icon-text">Manage Account</div>
+          <i class="fas fa-user-cog"></i>
+        </div>
+        <div class="icon-box" onclick="viewSaved()">
+          <div class="icon-text">Saved</div>
+          <i class="fas fa-bookmark"></i>
+        </div>
+        <div class="icon-box" onclick="viewhistory()">
+          <div class="icon-text">Activity</div>
+          <i class="fas fa-history"></i>
+        </div>
+        <div class="icon-box" onclick="viewnotifications()">
+          <div class="icon-text">Notifications</div>
+          <i class="fas fa-bell"></i>
+        </div>
+        <div class="icon-box" onclick="viewsupport()">
+          <div class="icon-text">Support</div>
+          <i class="fas fa-headset"></i>
+        </div>
+        <div class="icon-box" onclick="viewtc()">
+          <div class="icon-text">Terms</div>
+          <i class="fas fa-file-contract"></i>
+        </div>
+        <div class="icon-box" onclick="viewpp()">
+          <div class="icon-text">Privacy</div>
+          <i class="fas fa-user-shield"></i>
+        </div>
+      </div>
+
+      <!-- Line 2 -->
+      <div class="icon-group">
+        <div class="icon-box" onclick="viewfaq()">
+          <div class="icon-text">FAQ</div>
+          <i class="fas fa-question-circle"></i>
+        </div>
+        <div class="icon-box" onclick="viewAbout()">
+          <div class="icon-text">About</div>
+          <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="icon-box" onclick="viewseller()">
+          <div class="icon-text">Seller</div>
+          <i class="fas fa-store"></i>
+        </div>
+        <div class="icon-box" onclick="viewpackages()">
+          <div class="icon-text">Packages</div>
+          <i class="fas fa-box-open"></i>
+        </div>
+        <div class="icon-box" onclick="viewkyc()">
+          <div class="icon-text">KYC</div>
+          <i class="fas fa-id-badge"></i>
+        </div>
+        <div class="icon-box" onclick="viewmanageorders()">
+          <div class="icon-text">Manage Orders</div>
+          <i class="fas fa-tasks"></i>
+        </div>
+        <div class="icon-box" onclick="viewOrders()">
+          <div class="icon-text">Your Orders</div>
+          <i class="fas fa-box"></i>
+        </div>
+        <div class="icon-box" onclick="trackdeals()">
+          <div class="icon-text">Your Deals</div>
+          <i class="fas fa-tags"></i>
+        </div>
+        <div class="icon-box" onclick="viewdeals()">
+          <div class="icon-text">Manage Deals</div>
+          <i class="fas fa-handshake"></i>
+        </div>
+        <div class="icon-box" onclick="viewchats()">
+          <div class="icon-text">Messages</div>
+          <i class="fas fa-comments"></i>
+        </div>
+        <div class="icon-box" onclick="window.location.href='account.html'">
+          <div class="icon-text">Login</div>
+          <i class="fas fa-sign-in-alt"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
