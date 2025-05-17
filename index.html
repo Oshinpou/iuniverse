@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IMACX Universe</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom Fonts & Style -->
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(ellipse at center, #050505 0%, #0d0d0d 100%);
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    .title-glow {
+      font-family: 'Unbounded', cursive;
+      background: linear-gradient(to right, #fff, #ffd700, #f5c518);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+    }
+
+    .glass-box {
+      backdrop-filter: blur(15px);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 2rem;
+      box-shadow: 0 10px 40px rgba(255, 255, 255, 0.05);
+      transition: transform 0.4s ease;
+    }
+
+    .glass-box:hover {
+      transform: scale(1.03);
+    }
+
+    .orbit {
+      position: absolute;
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 50%;
+      animation: rotate 30s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Hero Section -->
+  <section class="relative h-screen flex items-center justify-center text-center overflow-hidden">
+    <!-- 3D Orbit Circles -->
+    <div class="orbit w-[500px] h-[500px] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="orbit w-[700px] h-[700px] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+
+    <!-- Floating Particles (Optional: Canvas or animated dots) -->
+    <canvas id="stars" class="absolute top-0 left-0 w-full h-full z-0"></canvas>
+
+    <div class="z-10 px-6">
+      <h1 class="text-7xl md:text-9xl font-bold title-glow">IMACX</h1>
+      <p class="text-xl md:text-2xl mt-4 text-gray-300">Crafting the Billionaire Experience</p>
+      <button class="mt-10 px-10 py-4 rounded-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold">Explore Realm</button>
+    </div>
+  </section>
+
+  <!-- Luxury Product Cards -->
+  <section class="py-24 px-6 md:px-32 bg-black">
+    <h2 class="text-center text-5xl font-bold title-glow mb-20">Timeless Icons</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div class="glass-box p-8 text-center">
+        <img src="https://images.unsplash.com/photo-1606813903364-c2875d6e4eec?auto=format&fit=crop&w=800&q=80" class="rounded-2xl mb-6 floating" />
+        <h3 class="text-2xl font-semibold mb-2">Crown Sofa</h3>
+        <p class="text-gray-400">Enthroned in Italian velvet, engineered for majestic rest.</p>
+      </div>
+      <div class="glass-box p-8 text-center">
+        <img src="https://images.unsplash.com/photo-1578271880848-3e090fa7a5b5?auto=format&fit=crop&w=800&q=80" class="rounded-2xl mb-6 floating" />
+        <h3 class="text-2xl font-semibold mb-2">Iconic Face Serum</h3>
+        <p class="text-gray-400">100-lab luxury peptide sculpting for powerful first impressions.</p>
+      </div>
+      <div class="glass-box p-8 text-center">
+        <img src="https://images.unsplash.com/photo-1600185365483-d1d0d5a7a0c1?auto=format&fit=crop&w=800&q=80" class="rounded-2xl mb-6 floating" />
+        <h3 class="text-2xl font-semibold mb-2">Blue Gold Chocolat</h3>
+        <p class="text-gray-400">A billion-dollar taste of saffron, sea salt, blue cocoa, and diamonds.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Signature Quote -->
+  <section class="py-24 text-center text-white bg-gradient-to-br from-gray-950 to-black">
+    <h2 class="text-4xl md:text-6xl font-bold title-glow max-w-4xl mx-auto">“Owning an IMACX piece is not luxury. It is legacy.”</h2>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-10 text-center text-gray-500 text-sm border-t border-gray-800 bg-black">
+    © 2025 IMACX Universe. All rights reserved — powered by elegance and coded in legacy.
+  </footer>
+
+  <!-- Background Stars Script -->
+  <script>
+    const canvas = document.getElementById('stars');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let stars = Array.from({length: 200}, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.2,
+      alpha: Math.random()
+    }));
+
+    function animate() {
+      ctx.clearRect(0, 0, w, h);
+      for (let star of stars) {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${star.alpha})`;
+        ctx.fill();
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+
+</body>
+</html>
