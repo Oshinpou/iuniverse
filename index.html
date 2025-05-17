@@ -75,24 +75,7 @@
 </head>
 
 <body>
-<div id="header-placeholder"></div>
- <script>
-  fetch("header.html")
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Header load failed");
-      }
-      return response.text();
-    })
-    .then(data => {
-      document.getElementById("header-placeholder").innerHTML = data;
-    })
-    .catch(error => {
-      console.error("Error loading header:", error);
-    });
- </script>
-  
-  <!-- Hero Section -->
+   <!-- Hero Section -->
   <section class="relative h-screen flex items-center justify-center text-center overflow-hidden">
     <!-- 3D Orbit Circles -->
     <div class="orbit w-[500px] h-[500px] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
@@ -176,6 +159,23 @@
     <h2 class="text-4xl md:text-6xl font-bold title-glow max-w-4xl mx-auto">“Owning an IMACX piece is not luxury. It is legacy.”</h2>
   </section>
 
+ <div id="header-placeholder"></div>
+ <script>
+  fetch("header.html")
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Header load failed");
+      }
+      return response.text();
+    })
+    .then(data => {
+      document.getElementById("header-placeholder").innerHTML = data;
+    })
+    .catch(error => {
+      console.error("Error loading header:", error);
+    });
+ </script>
+  
   <!-- Footer -->
   <footer class="py-10 text-center text-gray-500 text-sm border-t border-gray-800 bg-black">
     © 2025 IMACX Universe. All rights reserved — powered by elegance and coded in legacy.
