@@ -258,34 +258,37 @@
 
   gun.get('imacx-accounts').get(username).once(data => {
     if (data && data.password === password) {
-      // Show success message
-      msg.innerText = 'Login successful!';
-      document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+      const timestamp = new Date().getTime();
+      const account = {
+        id: data.id || uuidv4(),  // Use existing ID or create one
+        username: username,
+        created: data.created || new Date().toISOString(),
+        timestamp: timestamp
+      };
 
-      // Save session
-      const account = { id: uuidv4(), username };
-      saveAccountSession(account);
-
-      // Show toast
-      Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
+      // Store session in localStorage
+      localStorage.setItem('loggedInUser', JSON.stringify(account));
 
       // Update UI
-      updateHeaderLoginStatus();
+      msg.innerText = 'Login successful!';
+      document.getElementById('status-info').innerText =
+        `Logged in as ${username}, created at ${account.created}`;
 
-      // Clear fields
+      Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
+
+      updateHeaderLoginStatus(); // This should update header if embedded
       document.getElementById('login-user').value = '';
       document.getElementById('login-pass').value = '';
       msg.innerText = '';
-
-      // Hide login container
       document.getElementById('login-container').style.display = 'none';
 
+      // Optional redirect
+      // window.location.href = 'index.html';
     } else {
       msg.innerText = 'Invalid login credentials.';
     }
   });
-  }
-   
+}
  
  function recoverPassword() {
       const username = document.getElementById('recover-user').value.trim();
