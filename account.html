@@ -246,26 +246,45 @@
 }
   
 
-   function login() {
-      const username = document.getElementById('login-user').value.trim();
-      const password = document.getElementById('login-pass').value;
-      const msg = document.getElementById('login-msg');
+    function login() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const msg = document.getElementById('login-msg');
 
-      if (!username || !password) {
-        msg.innerText = 'Enter both username and password.';
-        return;
-      }
+  if (!username || !password) {
+    msg.innerText = 'Enter both username and password.';
+    return;
+  }
 
-      gun.get('imacx-accounts').get(username).once(data => {
-        if (data && data.password === password) {
-          msg.innerText = 'Login successful!';
-          document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
-        } else {
-          msg.innerText = 'Invalid login credentials.';
-        }
-      });
+  gun.get('imacx-accounts').get(username).once(data => {
+    if (data && data.password === password) {
+      // Show success message
+      msg.innerText = 'Login successful!';
+      document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+
+      // Save session
+      const account = { id: uuidv4(), username };
+      saveAccountSession(account);
+
+      // Show toast
+      Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
+
+      // Update UI
+      updateHeaderLoginStatus();
+
+      // Clear fields
+      document.getElementById('login-user').value = '';
+      document.getElementById('login-pass').value = '';
+      msg.innerText = '';
+
+      // Hide login container
+      document.getElementById('login-container').style.display = 'none';
+
+    } else {
+      msg.innerText = 'Invalid login credentials.';
     }
-
+  });
+  }
    
  
  function recoverPassword() {
