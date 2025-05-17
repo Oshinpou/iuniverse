@@ -38,6 +38,16 @@
     input::placeholder {
       color: #888;
     }
+  
+  input, select {
+  color: black;
+  font-color: black;
+}
+
+    input, select {
+  color: #000 !important;
+  background-color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -47,8 +57,8 @@
     <!-- Login -->
     <div class="glass-box">
       <h2 class="text-2xl mb-4">Login</h2>
-      <input id="login-user" type="text" placeholder="Username" class="w-full p-2 rounded">
-      <input id="login-pass" type="password" placeholder="Password" class="w-full p-2 rounded">
+      <input id="login-user" type="text" placeholder="Username" class="w-full text-black p-2 rounded">
+      <input id="login-pass" type="password" placeholder="Password" class="w-full text-black p-2 rounded">
       <button onclick="login()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Login</button>
       <p id="login-msg" class="text-red-500"></p>
     </div>
@@ -56,8 +66,12 @@
     <!-- Signup -->
     <div class="glass-box">
       <h2 class="text-2xl mb-4">Sign Up</h2>
-      <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded">
-      <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded">
+      <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded" text-black bg-white
+
+>
+      <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded" text-black bg-white
+
+>
       <div class="flex gap-2 mb-4">
         <select id="signup-country-code" class="p-2 rounded bg-gray-800 text-white border border-gray-600">
           <option value="+91">+91 India</option>
