@@ -137,8 +137,14 @@
 
 <div id="headerSticker">
   <div class="header-container">
-    <div id="accountStatus">Not logged in</div>
-    <div class="header-icons">
+    <div id="login-status"></div>
+   <script src="account-session.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    updateHeaderLoginStatus();
+  });
+</script>
+   <div class="header-icons">
       <!-- Line 1 -->
       <div class="icon-group">
         <div class="icon-box" onclick="viewAccount()">
@@ -221,7 +227,7 @@
     </div>
   </div>
 </div>
-<script>
+   <script>
   $(document).ready(function () {
     const user = JSON.parse(localStorage.getItem("loggedInUser"));
     const statusBox = $("#accountStatus");
