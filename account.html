@@ -181,16 +181,18 @@
     </script>
 
 <script>
+  // Initialize Gun
   const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-  
-  // Example: set data
-  gun.get('test').put({ hello: 'world' });
 
-  // Example: get data
-  gun.get('test').on(data => {
-    console.log("Received data:", data);
+  // Put some data
+  gun.get('example').put({ hello: 'world' });
+
+  // Read the data
+  gun.get('example').on(data => {
+    console.log('Data from Gun:', data);
   });
 </script>
+
     <script src="account.js" type="module"></script>
 </body>
 </html>
