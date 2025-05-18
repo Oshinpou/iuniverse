@@ -1,233 +1,281 @@
-// imacx account.js
-
-// Check for required libraries
-if (typeof Gun === "undefined" || typeof Dexie === "undefined" || typeof bcrypt === "undefined") {
-  console.error("Missing required libraries (Gun, Dexie, or bcrypt). Ensure they are included.");
-}
-if (typeof store === "undefined") {
-  console.warn("store.js not found. Using localStorage fallback.");
-  var store = {
-    set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
-    get: (k) => JSON.parse(localStorage.getItem(k)),
-    remove: (k) => localStorage.removeItem(k),
-  };
-}
-
-// Setup databases
+// Initialize GunDB
 const gun = Gun();
-const db = new Dexie("imacx-accounts");
-db.version(1).stores({
-  users: "&username, email, phone, passwordHash, wallet, timestamp"
+
+// Function to get current timestamp in IST
+function timestampIST() {
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    return new Date(date).toISOString();
+}
+
+// --- Utility Functions ---
+function isValidUsername(username) {
+    return validator.isLength(username, { min: 3, max: 20 }) && /^[a-zA-Z0-9]+$/.test(username);
+}
+
+function isValidEmail(email) {
+    return validator.isEmail(email);
+}
+
+function isValidPhone(phone) {
+    return validator.isMobilePhone(phone);
+}
+
+function isValidPassword(password) {
+    return validator.isLength(password, { min: 6 });
+}
+
+function displayError(elementId, message) {
+    document.getElementById(elementId).innerText = message;
+}
+
+function clearError(elementId) {
+    document.getElementById(elementId).innerText = '';
+}
+
+// --- Signup Logic ---
+document.getElementById('signup-btn').addEventListener('click', async (event) => {
+    event.preventDefault(); // Prevent default form submission
+
+    const usernameInput = document.getElementById('signup-user');
+    const emailInput = document.getElementById('signup-email');
+    const phoneInput = document.getElementById('signup-phone');
+    const passwordInput = document.getElementById('signup-pass');
+    const confirmInput = document.getElementById('signup-confirm');
+    const countryCodeInput = document.getElementById('signup-country-code');
+    const msg = document.getElementById('signup-msg');
+
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const phone = phoneInput.value.trim();
+    const countryCode = countryCodeInput.value;
+    const password = passwordInput.value;
+    const confirm = confirmInput.value;
+
+    clearError('signup-user-error');
+    clearError('signup-email-error');
+    clearError('signup-phone-error');
+    clearError('signup-pass-error');
+    clearError('signup-confirm-error');
+    msg.innerText = '';
+
+    let isValid = true;
+
+    if (!isValidUsername(username)) {
+        displayError('signup-user-error', 'Username must be 3-20 alphanumeric characters.');
+        isValid = false;
+    }
+
+    if (!isValidEmail(email)) {
+        displayError('signup-email-error', 'Invalid email address.');
+        isValid = false;
+    }
+
+    if (!isValidPhone(phone)) {
+        displayError('signup-phone-error', 'Invalid phone number.');
+        isValid = false;
+    }
+
+    if (!isValidPassword(password)) {
+        displayError('signup-pass-error', 'Password must be at least 6 characters.');
+        isValid = false;
+    }
+
+    if (password !== confirm) {
+        displayError('signup-confirm-error', 'Passwords do not match.');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        return;
+    }
+
+    const userKey = username;
+    gun.get('imacx-accounts').get(userKey).once(async existing => {
+        if (existing) {
+            msg.innerText = 'Username already exists.';
+        } else {
+            bcrypt.hash(password, 10, (err, hash) => {
+                if (err) {
+                    console.error("Error hashing password:", err);
+                    msg.innerText = 'Error creating account.';
+                    return;
+                }
+
+                const user = {
+                  username,
+                    email,
+                    phone: `${countryCode}${phone}`,
+                    password: hash, // Store the hashed password
+                    created: timestampIST()
+                };
+                gun.get('imacx-accounts').get(userKey).put(user);
+                msg.innerText = 'Account created successfully!';
+                // Optionally clear the form
+                document.getElementById('signup-user').value = '';
+                document.getElementById('signup-email').value = '';
+                document.getElementById('signup-phone').value = '';
+                document.getElementById('signup-pass').value = '';
+                document.getElementById('signup-confirm').value = '';
+            });
+        }
+    });
 });
 
-// Utilities
-const notyf = new Notyf();
-const timestamp = () => new Date().toISOString();
-const hashPassword = async (p) => await bcrypt.hash(p, 10);
-const validate = (obj) => Object.values(obj).every(v => v.trim() !== "");
-const saveSession = (data) => store.set("imacx-user", data);
-const clearSession = () => store.remove("imacx-user");
-const getSession = () => store.get("imacx-user");
-const isSessionExpired = (session) => {
-  const now = new Date().getTime();
-  const sessionTime = new Date(session.timestamp).getTime();
-  return (now - sessionTime) > (2 * 60 * 60 * 1000); // 2 hours
-};
+// --- Login Logic ---
+document.getElementById('login-btn').addEventListener('click', (event) => {
+    event.preventDefault();
 
-async function connectWallet() {
-  try {
-    if (typeof window.ethereum !== "undefined") {
-      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-      const address = accounts[0];
-      store.set("wallet", address);
-      $("#status-info").text(`Wallet Connected: ${address}`);
-      return address;
-    } else {
-      notyf.error("No wallet found.");
-    }
-  } catch (e) {
-    console.error("Wallet connect error:", e);
-    notyf.error("Wallet connect failed.");
-  }
-}
+    const usernameInput = document.getElementById('login-user');
+    const passwordInput = document.getElementById('login-pass');
+    const msg = document.getElementById('login-msg');
 
-async function login() {
-  try {
-    $("#login-btn").prop("disabled", true);
-    const username = $("#login-user").val();
-    const password = $("#login-pass").val();
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
 
-    if (!validate({ username, password })) {
-      notyf.error("Please fill all login fields");
-      return;
-    }
+    msg.innerText = '';
 
-    const user = await db.users.get(username);
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      notyf.error("Invalid login");
-      return;
-    }
-
-    saveSession({ username, wallet: user.wallet, timestamp: timestamp() });
-    notyf.success("Login successful");
-    updateStatus();
-  } catch (err) {
-    console.error("Login error:", err);
-    notyf.error("Login failed");
-  } finally {
-    $("#login-btn").prop("disabled", false);
-  }
-}
-
-async function signup() {
-  try {
-    $("#signup-btn").prop("disabled", true);
-    const username = $("#signup-user").val();
-    const email = $("#signup-email").val();
-    const code = $("#signup-country-code").val();
-    const phone = $("#signup-phone").val();
-    const pass = $("#signup-pass").val();
-    const confirm = $("#signup-confirm").val();
-
-    if (!validate({ username, email, code, phone, pass, confirm })) {
-      notyf.error("Please fill all fields");
-      return;
-    }
-
-    if (pass.length < 6) {
-      notyf.error("Password too short (min 6 characters)");
-      return;
-    }
-
-    if (pass !== confirm) {
-      notyf.error("Passwords do not match");
-      return;
-    }
-
-    const exists = await db.users.get(username);
-    if (exists) {
-      notyf.error("Username already taken");
-      return;
-    }
-
-    const wallet = await connectWallet();
-    if (!wallet) {
-      notyf.error("Wallet connection is required");
-      return;
-    }
-
-    const passwordHash = await hashPassword(pass);
-    const fullPhone = `${code}${phone}`;
-
-    await db.users.put({
-      username,
-      email,
-      phone: fullPhone,
-      passwordHash,
-      wallet,
-      timestamp: timestamp(),
-    });
-
-    notyf.success("Signup successful");
-    login(); // Auto login after signup
-  } catch (err) {
-    console.error("Signup error:", err);
-    notyf.error("Signup failed");
-  } finally {
-    $("#signup-btn").prop("disabled", false);
-  }
-}
-
-async function recoverPassword() {
-  try {
-    $("#recover-pass-btn").prop("disabled", true);
-    const username = $("#recover-user").val();
-    const email = $("#recover-email").val();
-    const phone = $("#recover-country-code").val() + $("#recover-phone").val();
-
-    const user = await db.users.get(username);
-    if (!user || user.email !== email || user.phone !== phone) {
-      notyf.error("No account found");
-      return;
-    }
-
-    notyf.success("Account verified. Change password manually in DB.");
-  } catch (err) {
-    console.error("Recovery error:", err);
-    notyf.error("Recovery failed");
-  } finally {
-    $("#recover-pass-btn").prop("disabled", false);
-  }
-}
-
-async function recoverUsername() {
-  try {
-    $("#recover-username-btn").prop("disabled", true);
-    const email = $("#username-recovery-email").val();
-    const phone = $("#username-country-code").val() + $("#username-phone").val();
-    const pass = $("#username-recovery-pass").val();
-
-    const all = await db.users.toArray();
-    for (let user of all) {
-      const match = user.email === email && user.phone === phone && await bcrypt.compare(pass, user.passwordHash);
-      if (match) {
-        notyf.success(`Your username: ${user.username}`);
+    if (!username || !password) {
+        msg.innerText = 'Enter both username and password.';
         return;
-      }
     }
-    notyf.error("Account not found");
-  } catch (err) {
-    console.error("Username recovery error:", err);
-    notyf.error("Recovery failed");
-  } finally {
-    $("#recover-username-btn").prop("disabled", false);
-  }
-}
 
-function logout() {
-  clearSession();
-  $("#status-info").text("");
-  notyf.success("Logged out");
-}
+    gun.get('imacx-accounts').get(username).once(data => {
+        if (data) {
+            bcrypt.compare(password, data.password, (err, result) => {
+                if (err) {
+                    console.error("Error comparing passwords:", err);
+                    msg.innerText = 'Login failed.';
+                    return;
+                }
+                if (result) {
+                    msg.innerText = 'Login successful!';
+                    document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+                    localStorage.setItem('loggedInUser', username);
+                    // Optionally redirect
+                } else {
+                    msg.innerText = 'Invalid login credentials.';
+                }
+            });
+        } else {
+            msg.innerText = 'Invalid login credentials.';
+        }
+    });
+});
 
-function updateStatus() {
-  const session = getSession();
-  if (session) {
-    if (isSessionExpired(session)) {
-      logout();
-      notyf.error("Session expired. Please log in again.");
-      return;
+// --- Recover Password Logic ---
+document.getElementById('recover-pass-btn').addEventListener('click', (event) => {
+    event.preventDefault();
+
+    const usernameInput = document.getElementById('recover-user');
+    const emailInput = document.getElementById('recover-email');
+    const phoneInput = document.querySelector('#recover-password-box input[type="tel"]');
+    const countryCodeInput = document.querySelector('#recover-password-box select');
+    const msg = document.getElementById('recover-msg');
+
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const phone = phoneInput.value.trim();
+    const countryCode = countryCodeInput.value;
+
+    clearError('recover-user-error');
+    clearError('recover-email-error');
+    clearError('recover-phone-error');
+    msg.innerText = '';
+
+    let isValid = true;
+
+    if (!username) {
+        displayError('recover-user-error', 'Username is required.');
+        isValid = false;
     }
-    $("#status-info").text(`Logged in as ${session.username} | Wallet: ${session.wallet}`);
-  }
-}
 
-// On DOM Ready: Bind All Buttons
-$(document).ready(function () {
-  // Auto load header and attach events after header loads
-  fetch("header.html")
-    .then(res => res.text())
-    .then(html => {
-      $("#header-placeholder").html(html);
-      $("#wallet-connect").on("click", connectWallet);
-      $("#logout-btn").on("click", logout);
+    if (!isValidEmail(email)) {
+        displayError('recover-email-error', 'Invalid email address.');
+        isValid = false;
+    }
+
+    if (!isValidPhone(phone)) {
+        displayError('recover-phone-error', 'Invalid phone number.');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        return;
+    }
+
+    gun.get('imacx-accounts').get(username).once(data => {
+        if (!data) {
+            msg.innerText = 'No account found with that username.';
+            return;
+        }
+
+        if (data.email === email && data.phone === `${countryCode}${phone}`) {
+            msg.innerText = `Contact support to recover your password.`; // Implement a real password reset flow
+        } else {
+            msg.innerText = 'Information does not match. Cannot recover password.';
+        }
+    });
+});
+
+// --- Recover Username Logic ---
+document.getElementById('recover-username-btn').addEventListener('click', (event) => {
+    event.preventDefault();
+
+    const emailInput = document.getElementById('username-recovery-email');
+    const phoneInput = document.querySelector('#recover-username-box input[type="tel"]');
+    const countryCodeInput = document.querySelector('#recover-username-box select');
+    const passwordInput = document.getElementById('username-recovery-pass');
+    const msg = document.getElementById('username-msg');
+
+    const email = emailInput.value.trim().toLowerCase();
+    const phone = phoneInput.value.trim();
+    const countryCode = countryCodeInput.value;
+    const password = passwordInput.value;
+
+    clearError('username-recovery-email-error');
+    clearError('username-phone-error');
+    clearError('username-recovery-pass-error');
+    msg.innerText = '';
+
+    let isValid = true;
+
+    if (!isValidEmail(email)) {
+        displayError('username-recovery-email-error', 'Invalid email address.');
+        isValid = false;
+    }
+
+    if (!isValidPhone(phone)) {
+        displayError('username-phone-error', 'Invalid phone number.');
+        isValid = false;
+    }
+
+    if (!isValidPassword(password)) {
+        displayError('username-recovery-pass-error', 'Password must be at least 6 characters.');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        return;
+    }
+
+    gun.get('imacx-accounts').map().once(data => {
+        if (data && data.email === email && data.phone === `${countryCode}${phone}`) {
+            bcrypt.compare(password, data.password, (err, result) => {
+                if (err) {
+                    console.error("Error comparing passwords:", err);
+                    msg.innerText = 'Could not verify account.';
+                    return;
+                }
+                if (result) {
+                    msg.innerText = `Your username is: ${data.username}`;
+                }
+            });
+        }
     });
 
-  $("#login-btn").on("click", login);
-  $("#signup-btn").on("click", signup);
-  $("#recover-pass-btn").on("click", recoverPassword);
-  $("#recover-username-btn").on("click", recoverUsername);
-
-  updateStatus();
-
-  // Password hint display (optional)
-  $("#signup-pass").on("input", function () {
-    const val = $(this).val();
-    const msg = val.length < 6
-      ? "Weak: Add more characters"
-      : /[A-Z]/.test(val) && /\d/.test(val)
-      ? "Strong password"
-      : "Medium strength";
-    $("#password-hint").text(msg);
-  });
+    setTimeout(() => {
+        if (!msg.innerText.startsWith('Your username')) {
+            msg.innerText = 'No matching account found with provided details.';
+        }
+    }, 2000);
 });
