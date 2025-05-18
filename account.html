@@ -37,6 +37,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -176,20 +180,16 @@
             });
     </script>
 
-    <script type="importmap">
-{
-  "imports": {
-    "gun": "https://cdn.jsdelivr.net/npm/gun/gun.js",
-    "gun/sea": "https://cdn.jsdelivr.net/npm/gun/sea.js"
-  }
-}
-</script>
+<script>
+  const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+  
+  // Example: set data
+  gun.get('test').put({ hello: 'world' });
 
-<script type="module">
-  import Gun from 'gun';
-  import 'gun/sea';
-
-  const gun = Gun(['https://gun.peers.crunk.house/gun']);
+  // Example: get data
+  gun.get('test').on(data => {
+    console.log("Received data:", data);
+  });
 </script>
     <script src="account.js" type="module"></script>
 </body>
