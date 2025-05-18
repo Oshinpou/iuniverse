@@ -1,317 +1,462 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IMACX Account System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-  <!-- UI & Utility Libraries -->
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lodash/lodash.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/uuid@9.0.0/dist/umd/uuidv4.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/validator@13.11.0/validator.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>IMACX Account System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uuid@9.0.0/dist/umd/uuidv4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/validator@13.11.0/validator.min.js"></script>
 
-<!-- UI Frameworks -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<!-- DOM & Animation Tools -->
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
-<script src="https://unpkg.com/scrollreveal"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+    <script src="https://unpkg.com/scrollreveal"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Helper Libraries -->
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/store2@2.14.2/dist/store2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dexie@4.0.4/dist/dexie.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/idb-keyval.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/store2@2.14.2/dist/store2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.4/dist/dexie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/idb-keyval.iife.min.js"></script>
 
-<!-- Crypto & Encoding -->
-<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css" />
 
-<!-- Additional UI Components -->
-<script src="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/nanoid/nanoid.js"></script>
 
-<!-- Optional Enhancement -->
-<script src="https://cdn.jsdelivr.net/npm/nanoid/nanoid.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 
-  <!-- usages -->
- <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/store.js/1.3.20/store.min.js"></script>
-  
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: radial-gradient(ellipse at center, #050505 0%, #0d0d0d 100%);
-      color: #ffffff;
-    }
-    .title-glow {
-      font-family: 'Unbounded', cursive;
-      background: linear-gradient(to right, #fff, #ffd700, #f5c518);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
-    }
-    .glass-box {
-      backdrop-filter: blur(15px);
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 2rem;
-      box-shadow: 0 10px 40px rgba(255, 255, 255, 0.05);
-      padding: 2rem;
-      margin-bottom: 2rem;
-    }
-    input, select, button {
-      margin-top: 0.5rem;
-      margin-bottom: 1rem;
-      color: black;
-    }
-    input::placeholder {
-      color: #888;
-    }
-    input, select {
-      color: #000 !important;
-      background-color: #fff;
-    }
-  </style>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at center, #050505 0%, #0d0d0d 100%);
+            color: #ffffff;
+        }
+        .title-glow {
+            font-family: 'Unbounded', cursive;
+            background: linear-gradient(to right, #fff, #ffd700, #f5c518);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+        }
+        .glass-box {
+            backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            box-shadow: 0 10px 40px rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        input, select, button {
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            color: black;
+        }
+        input::placeholder {
+            color: #888;
+        }
+        input, select {
+            color: #000 !important;
+            background-color: #fff;
+        }
+        .error-message {
+            color: #ff4d4d;
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+    </style>
 </head>
 <body>
-  <section class="p-6 max-w-4xl mx-auto">
-    <h1 class="text-5xl text-center title-glow mb-10">IMACX Account Portal</h1><!-- Login -->
-<div class="glass-box">
-  <h2 class="text-2xl mb-4">Login</h2>
-  <input id="login-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
-  <input id="login-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
-  <button id="login-btn" onclick="login()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Login</button>
-  <p id="login-msg" class="text-red-500"></p>
-</div>
+    <section class="p-6 max-w-4xl mx-auto">
+        <h1 class="text-5xl text-center title-glow mb-10">IMACX Account Portal</h1>
 
-<!-- Signup -->
-<div class="glass-box">
-  <h2 class="text-2xl mb-4">Sign Up</h2>
-  <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
-  <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
-  <div class="flex gap-2 mb-4">
-    <select id="signup-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
-      <option value="+91">+91 India</option>
-      <option value="+1">+1 USA</option>
-      <option value="+44">+44 UK</option>
-    </select>
-    <input id="signup-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
-  </div>
-  <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
-  <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded bg-white text-black">
-  <button id="signup-btn" onclick="signup()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Sign Up</button>
-  <p id="signup-msg" class="text-red-500"></p>
-</div>
+        <div class="glass-box">
+            <h2 class="text-2xl mb-4">Login</h2>
+            <input id="login-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+            <input id="login-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
+            <button id="login-btn" onclick="loginUser()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Login</button>
+            <p id="login-msg" class="text-red-500"></p>
+        </div>
 
-<!-- Recover Password -->
-<div id="recover-password-box" class="glass-box">
-  <h2 class="text-2xl mb-4">Recover Password</h2>
-  <input id="recover-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
-  <input id="recover-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
-  <div class="flex gap-2 mb-4">
-    <select id="recover-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
-      <option value="+91">+91 India</option>
-      <option value="+1">+1 USA</option>
-      <option value="+44">+44 UK</option>
-    </select>
-    <input id="recover-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
-  </div>
-  <button id="recover-pass-btn" onclick="recoverPassword()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Password</button>
-  <p id="recover-msg" class="text-red-500"></p>
-</div>
+        <div class="glass-box">
+            <h2 class="text-2xl mb-4">Sign Up</h2>
+            <input id="signup-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+            <p id="signup-user-error" class="error-message"></p>
+            <input id="signup-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
+            <p id="signup-email-error" class="error-message"></p>
+            <div class="flex gap-2 mb-4">
+                <select id="signup-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
+                    <option value="+91">+91 India</option>
+                    <option value="+1">+1 USA</option>
+                    <option value="+44">+44 UK</option>
+                </select>
+                <input id="signup-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
+            </div>
+            <p id="signup-phone-error" class="error-message"></p>
+            <input id="signup-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
+            <p id="signup-pass-error" class="error-message"></p>
+            <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-2 rounded bg-white text-black">
+            <p id="signup-confirm-error" class="error-message"></p>
+            <button id="signup-btn" onclick="signupUser()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Sign Up</button>
+            <p id="signup-msg" class="text-green-500"></p>
+        </div>
 
-<!-- Recover Username -->
-<div id="recover-username-box" class="glass-box">
-  <h2 class="text-2xl mb-4">Recover Username</h2>
-  <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
-  <div class="flex gap-2 mb-4">
-    <select id="username-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
-      <option value="+91">+91 India</option>
-      <option value="+1">+1 USA</option>
-      <option value="+44">+44 UK</option>
-    </select>
-    <input id="username-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
-  </div>
-  <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
-  <button id="recover-username-btn" onclick="recoverUsername()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Username</button>
-  <p id="username-msg" class="text-red-500"></p>
-</div>
+        <div id="recover-password-box" class="glass-box">
+            <h2 class="text-2xl mb-4">Recover Password</h2>
+            <input id="recover-user" type="text" placeholder="Username" class="w-full p-2 rounded bg-white text-black">
+            <p id="recover-user-error" class="error-message"></p>
+            <input id="recover-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
+            <p id="recover-email-error" class="error-message"></p>
+            <div class="flex gap-2 mb-4">
+                <select id="recover-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
+                    <option value="+91">+91 India</option>
+                    <option value="+1">+1 USA</option>
+                    <option value="+44">+44 UK</option>
+                </select>
+                <input id="recover-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
+            </div>
+            <p id="recover-phone-error" class="error-message"></p>
+            <button id="recover-pass-btn" onclick="recoverPassword()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Password</button>
+            <p id="recover-msg" class="text-blue-500"></p>
+        </div>
 
-<!-- Account Status -->
-<div class="glass-box">
-  <h2 class="text-2xl mb-4">Account Status</h2>
-  <p id="status-info" class="text-gray-400"></p>
-</div>
+        <div id="recover-username-box" class="glass-box">
+            <h2 class="text-2xl mb-4">Recover Username</h2>
+            <input id="username-recovery-email" type="email" placeholder="Email" class="w-full p-2 rounded bg-white text-black">
+            <p id="username-recovery-email-error" class="error-message"></p>
+            <div class="flex gap-2 mb-4">
+                <select id="username-country-code" class="p-2 rounded bg-gray-800 text-black border border-gray-600">
+                    <option value="+91">+91 India</option>
+                    <option value="+1">+1 USA</option>
+                    <option value="+44">+44 UK</option>
+                </select>
+                <input id="username-phone" type="tel" placeholder="Phone number" class="w-full p-2 rounded bg-white text-black">
+            </div>
+            <p id="username-phone-error" class="error-message"></p>
+            <input id="username-recovery-pass" type="password" placeholder="Password" class="w-full p-2 rounded bg-white text-black">
+            <p id="username-recovery-pass-error" class="error-message"></p>
+            <button id="recover-username-btn" onclick="recoverUsername()" class="bg-yellow-400 px-4 py-2 rounded text-black font-semibold">Recover Username</button>
+            <p id="username-msg" class="text-blue-500"></p>
+        </div>
 
-  </section> 
-  
-  <div id="header-placeholder"></div>
- <script>
-  fetch("header.html")
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Header load failed");
-      }
-      return response.text();
-    })
-    .then(data => {
-      document.getElementById("header-placeholder").innerHTML = data;
-    })
-    .catch(error => {
-      console.error("Error loading header:", error);
-    });
- </script>
+        <div class="glass-box">
+            <h2 class="text-2xl mb-4">Account Status</h2>
+            <p id="status-info" class="text-gray-400"></p>
+        </div>
+    </section>
 
-  
- <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <div id="header-placeholder"></div>
+    <script>
+        fetch("header.html")
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Error loading header:", response.status);
+                    return ''; // Return an empty string to avoid breaking the next then block
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById("header-placeholder").innerHTML = data;
+            })
+            .catch(error => {
+                console.error("Error loading header:", error);
+            });
+    </script>
 
-  <script>
-// Initialize PouchDB for local storage
-const localDB = new PouchDB('imacx-local');
+    <script>
+        // Initialize GunDB for distributed global storage
+        const gun = Gun();
 
-// Initialize GunDB for distributed global storage
-const gun = Gun();
+        // Function to get current timestamp in IST timezone
+        function timestampIST() {
+            const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+            return new Date(date).toISOString();
+        }
 
-// Function to get current timestamp in IST timezone
-function timestampIST() {
-  const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-  return new Date(date).toISOString();
-}
+        // --- Validation Functions ---
+        function isValidUsername(username) {
+            return validator.isLength(username, { min: 3, max: 20 }) && /^[a-zA-Z0-9]+$/.test(username);
+        }
 
-// Function to handle user signup
-function signup() {
-  const username = document.getElementById('signup-user').value.trim();
-  const email = document.getElementById('signup-email').value.trim().toLowerCase();
-  const phone = document.getElementById('signup-phone').value.trim();
-  const countryCode = document.getElementById('countryCode').value;
-  const password = document.getElementById('signup-pass').value;
-  const confirm = document.getElementById('signup-confirm').value;
+        function isValidEmail(email) {
+            return validator.isEmail(email);
+        }
 
-  const msg = document.getElementById('signup-msg');
-  if (!username || !email || !phone || !password || !confirm) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
+        function isValidPhone(phone) {
+            return validator.isMobilePhone(phone);
+        }
 
-  if (password !== confirm) {
-    msg.innerText = 'Passwords do not match.';
-    return;
-  }
+        function isValidPassword(password) {
+            return validator.isLength(password, { min: 6 });
+        }
 
-  const userKey = username;
-  gun.get('imacx-accounts').get(userKey).once(existing => {
-    if (existing) {
-      msg.innerText = 'Username already exists.';
-    } else {
-      const user = {
-        username,
-        email,
-        phone: `${countryCode}${phone}`,
-        password,
-        created: timestampIST()
-      };
-      gun.get('imacx-accounts').get(userKey).put(user);
+        function displayError(elementId, message) {
+            document.getElementById(elementId).innerText = message;
+        }
 
-      // Store user data locally using PouchDB
-      localDB.put({
-        _id: userKey,
-        data: user
-      });
+        function clearError(elementId) {
+            document.getElementById(elementId).innerText = '';
+        }
 
-      msg.innerText = 'Account created successfully!';
-    }
-  });
-}
+        // --- Signup Function ---
+        async function signupUser() {
+            const usernameInput = document.getElementById('signup-user');
+            const emailInput = document.getElementById('signup-email');
+            const phoneInput = document.getElementById('signup-phone');
+            const passwordInput = document.getElementById('signup-pass');
+            const confirmInput = document.getElementById('signup-confirm');
+            const countryCodeInput = document.getElementById('signup-country-code');
+            const msg = document.getElementById('signup-msg');
 
-// Function to handle user login
-function login() {
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
+            const username = usernameInput.value.trim();
+            const email = emailInput.value.trim().toLowerCase();
+            const phone = phoneInput.value.trim();
+            const countryCode = countryCodeInput.value;
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
 
-  const msg = document.getElementById('login-msg');
+            clearError('signup-user-error');
+            clearError('signup-email-error');
+            clearError('signup-phone-error');
+            clearError('signup-pass-error');
+            clearError('signup-confirm-error');
+            msg.innerText = '';
 
-  if (!username || !password) {
-    msg.innerText = 'Enter both username and password.';
-    return;
-  }
+            let isValid = true;
 
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (data && data.password === password) {
-      msg.innerText = 'Login successful!';
-      document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+            if (!isValidUsername(username)) {
+                displayError('signup-user-error', 'Username must be 3-20 alphanumeric characters.');
+                isValid = false;
+            }
 
-      // Keep user logged in across sessions
-      localStorage.setItem('loggedInUser', username);
-    } else {
-      msg.innerText = 'Invalid login credentials.';
-    }
-  });
-}
+            if (!isValidEmail(email)) {
+                displayError('signup-email-error', 'Invalid email address.');
+                isValid = false;
+            }
 
-// Function to recover password
-function recoverPassword() {
-  const username = document.getElementById('recover-user').value.trim();
-  const email = document.getElementById('recover-email').value.trim().toLowerCase();
-  const phone = document.querySelector('#recover-password-box select').value + document.querySelector('#recover-password-box input[type="tel"]').value.trim();
-  const msg = document.getElementById('recover-msg');
+            if (!isValidPhone(phone)) {
+                displayError('signup-phone-error', 'Invalid phone number.');
+                isValid = false;
+            }
 
-  if (!username || !email || !phone) {
-    msg.innerText = 'Please fill all fields.';
-    return;
-  }
+            if (!isValidPassword(password)) {
+                displayError('signup-pass-error', 'Password must be at least 6 characters.');
+                isValid = false;
+            }
 
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (!data) {
-      msg.innerText = 'No account found with that username.';
-      return;
-    }
+            if (password !== confirm) {
+                displayError('signup-confirm-error', 'Passwords do not match.');
+                isValid = false;
+            }
 
-    if (data.email === email && data.phone === phone) {
-      msg.innerText = `Your password is: ${data.password}`;
-    } else {
-      msg.innerText = 'Credentials do not match. Cannot recover password.';
-    }
-  });
-}
+            if (!isValid) {
+                return;
+            }
 
-// Function to recover username
-function recoverUsername() {
-  const email = document.getElementById('username-recovery-email').value.trim().toLowerCase();
-  const phone = document.querySelector('#recover-username-box select').value + document.querySelector('#recover-username-box input[type="tel"]').value.trim();
-  const password = document.getElementById('username-recovery-pass').value;
-  const msg = document.getElementById('username-msg');
+            const userKey = username;
+            gun.get('imacx-accounts').get(userKey).once(async existing => {
+                if (existing) {
+                    msg.innerText = 'Username already exists.';
+                } else {
+                    // Hash the password using bcrypt
+                    bcrypt.hash(password, 10, (err, hash) => {
+                        if (err) {
+                            console.error("Error hashing password:", err);
+                            msg.innerText = 'Error creating account.';
+                            return;
+                        }
 
-  if (!email || !phone || !password) {
-    msg.innerText = 'Please fill all fields.';
-    return;
-  }
+                        const user = {
+                            username,
+                            email,
+                            phone: `${countryCode}${phone}`,
+                            password: hash, // Store the hashed password
+                            created: timestampIST()
+                        };
+                        gun.get('imacx-accounts').get(userKey).put(user);
+                        msg.innerText = 'Account created successfully!';
+                        // Optionally clear the form
+                        document.getElementById('signup-user').value = '';
+                        document.getElementById('signup-email').value = '';
+                        document.getElementById('signup-phone').value = '';
+                        document.getElementById('signup-pass').value = '';
+                        document.getElementById('signup-confirm').value = '';
+                    });
+                }
+            });
+        }
 
-  gun.get('imacx-accounts').map().once(data => {
-    if (data && data.email === email && data.phone === phone && data.password === password) {
-      msg.innerText = `Your username is: ${data.username}`;
-    }
-  });
+        // --- Login Function ---
+        function loginUser() {
+            const usernameInput = document.getElementById('login-user');
+            const passwordInput = document.getElementById('login-pass');
+            const msg = document.getElementById('login-msg');
 
-  // In case map doesn't hit a match
-  setTimeout(() => {
-    if (!msg.innerText.startsWith('Your username')) {
-      msg.innerText = 'No matching account found. Cannot recover username.';
-    }
-  }, 2000);
-}
-</script>
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            msg.innerText = '';
+
+            if (!username || !password) {
+                msg.innerText = 'Enter both username and password.';
+                return;
+            }
+
+            gun.get('imacx-accounts').get(username).once(data => {
+                if (data) {
+                    // Compare the entered password with the hashed password
+                    bcrypt.compare(password, data.password, (err, result) => {
+                        if (err) {
+                            console.error("Error comparing passwords:", err);
+                            msg.innerText = 'Login failed.';
+                            return;
+                        }
+                        if (result) {
+                            msg.innerText = 'Login successful!';
+                            document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+                            // Keep user logged in across sessions (basic example)
+                            localStorage.setItem('loggedInUser', username);
+                            // Optionally redirect to a dashboard or another page
+                        } else {
+                            msg.innerText = 'Invalid login credentials.';
+                        }
+                    });
+                } else {
+                    msg.innerText = 'Invalid login credentials.';
+                }
+            });
+        }
+
+        // --- Recover Password Function ---
+        function recoverPassword() {
+            const usernameInput = document.getElementById('recover-user');
+            const emailInput = document.getElementById('recover-email');
+            const phoneInput = document.querySelector('#recover-password-box input[type="tel"]');
+            const countryCodeInput = document.querySelector('#recover-password-box select');
+            const msg = document.getElementById('recover-msg');
+
+            const username = usernameInput.value.trim();
+            const email = emailInput.value.trim().toLowerCase();
+            const phone = phoneInput.value.trim();
+            const countryCode = countryCodeInput.value;
+
+            clearError('recover-user-error');
+            clearError('recover-email-error');
+            clearError('recover-phone-error');
+            msg.innerText = '';
+
+            let isValid = true;
+
+            if (!username) {
+                displayError('recover-user-error', 'Username is required.');
+                isValid = false;
+            }
+
+            if (!isValidEmail(email)) {
+                displayError('recover-email-error', 'Invalid email address.');
+                isValid = false;
+            }
+
+            if (!isValidPhone(phone)) {
+                displayError('recover-phone-error', 'Invalid phone number.');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                return;
+            }
+
+            gun.get('imacx-accounts').get(username).once(data => {
+                if (!data) {
+                    msg.innerText = 'No account found with that username.';
+                    return;
+                }
+
+                if (data.email === email && data.phone === `${countryCode}${phone}`) {
+                    msg.innerText = `Contact support to recover your password.`; // In a real system, you'd have a proper password reset mechanism
+                } else {
+                    msg.innerText = 'Information does not match. Cannot recover password.';
+                }
+            });
+        }
+
+        // --- Recover Username Function ---
+        function recoverUsername() {
+            const emailInput = document.getElementById('username-recovery-email');
+            const phoneInput = document.querySelector('#recover-username-box input[type="tel"]');
+            const countryCodeInput = document.querySelector('#recover-username-box select');
+            const passwordInput = document.getElementById('username-recovery-pass');
+            const msg = document.getElementById('username-msg');
+
+            const email = emailInput.value.trim().toLowerCase();
+            const phone = phoneInput.value.trim();
+            const countryCode = countryCodeInput.value;
+            const password = passwordInput.value;
+
+            clearError('username-recovery-email-error');
+            clearError('username-phone-error');
+            clearError('username-recovery-pass-error');
+            msg.innerText = '';
+
+            let isValid = true;
+
+            if (!isValidEmail(email)) {
+                displayError('username-recovery-email-error', 'Invalid email address.');
+                isValid = false;
+            }
+
+            if (!isValidPhone(phone)) {
+                displayError('username-phone-error', 'Invalid phone number.');
+                isValid = false;
+            }
+
+            if (!isValidPassword(password)) {
+                displayError('username-recovery-pass-error', 'Password must be at least 6 characters.');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                return;
+            }
+
+            gun.get('imacx-accounts').map().once(data => {
+                if (data && data.email === email && data.phone === `${countryCode}${phone}`) {
+                    // In a real scenario, you might want to verify the password as well before revealing the username
+                    bcrypt.compare(password, data.password, (err, result) => {
+                        if (err) {
+                            console.error("Error comparing passwords:", err);
+                            msg.innerText = 'Could not verify account.';
+                            return;
+                        }
+                        if (result) {
+                            msg.innerText = `Your username is: ${data.username}`;
+                        }
+                    });
+                }
+            });
+
+            // In case map doesn't hit a match or password doesn't match
+            setTimeout(() => {
+                if (!msg.innerText.startsWith('Your username')) {
+                    msg.innerText = 'No matching account found with provided details.';
+                }
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
