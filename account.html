@@ -176,5 +176,110 @@
     });
  </script>
   <script src="account.js"></script>
+<script>
+  const db = gun.get('imacx_accounts');
+
+  // Helper to show messages
+  function showMessage(id, msg, isError = true) {
+    const el = document.getElementById(id);
+    el.innerText = msg;
+    el.style.color = isError ? 'red' : 'green';
+    setTimeout(() => { el.innerText = ''; }, 5000);
+  }
+
+  // Login
+  function login() {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value;
+
+    if (!user || !pass) return showMessage('login-msg', 'All fields required');
+
+    db.get(user).once(data => {
+      if (!data) return showMessage('login-msg', 'Account not found');
+
+      bcrypt.compare(pass, data.pass, (err, res) => {
+        if (res) {
+          store.set('imacx_user', user);
+          showMessage('login-msg', 'Login successful', false);
+          document.getElementById('status-info').innerText = `Logged in as ${user}`;
+        } else {
+          showMessage('login-msg', 'Incorrect password');
+        }
+      });
+    });
+  }
+
+  // Sign Up
+  function signup() {
+    const user = document.getElementById('signup-user').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const code = document.getElementById('signup-country-code').value;
+    const pass = document.getElementById('signup-pass').value;
+    const confirm = document.getElementById('signup-confirm').value;
+
+    if (!user || !email || !phone || !pass || !confirm) return showMessage('signup-msg', 'All fields required');
+    if (!validator.isEmail(email)) return showMessage('signup-msg', 'Invalid email');
+    if (pass !== confirm) return showMessage('signup-msg', 'Passwords do not match');
+
+    db.get(user).once(data => {
+      if (data) return showMessage('signup-msg', 'Username already taken');
+
+      bcrypt.hash(pass, 10, (err, hash) => {
+        const newUser = {
+          email,
+          phone: `${code}${phone}`,
+          pass: hash,
+          created: dayjs().format(),
+        };
+        db.get(user).put(newUser);
+        showMessage('signup-msg', 'Account created!', false);
+      });
+    });
+  }
+
+  // Recover Password
+  function recoverPassword() {
+    const user = document.getElementById('recover-user').value.trim();
+    const email = document.getElementById('recover-email').value.trim();
+    const phone = document.getElementById('recover-phone').value.trim();
+    const code = document.getElementById('recover-country-code').value;
+
+    if (!user || !email || !phone) return showMessage('recover-msg', 'All fields required');
+
+    db.get(user).once(data => {
+      if (!data) return showMessage('recover-msg', 'User not found');
+      if (data.email === email && data.phone === `${code}${phone}`) {
+        showMessage('recover-msg', `Your password hash: ${data.pass}`, false);
+      } else {
+        showMessage('recover-msg', 'Details do not match');
+      }
+    });
+  }
+
+  // Recover Username
+  function recoverUsername() {
+    const email = document.getElementById('username-recovery-email').value.trim();
+    const phone = document.getElementById('username-phone').value.trim();
+    const code = document.getElementById('username-country-code').value;
+    const pass = document.getElementById('username-recovery-pass').value;
+
+    gun.get('imacx_accounts').map().once((data, key) => {
+      if (data?.email === email && data?.phone === `${code}${phone}`) {
+        bcrypt.compare(pass, data.pass, (err, res) => {
+          if (res) {
+            showMessage('username-msg', `Your username: ${key}`, false);
+          }
+        });
+      }
+    });
+  }
+
+  // On load: Check login status
+  const currentUser = store.get('imacx_user');
+  if (currentUser) {
+    document.getElementById('status-info').innerText = `Logged in as ${currentUser}`;
+  }
+</script>
 </body>
 </html>
