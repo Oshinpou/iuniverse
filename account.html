@@ -35,6 +35,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/nanoid/nanoid.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -152,6 +154,7 @@
         <div class="glass-box">
             <h2 class="text-2xl mb-4">Account Status</h2>
             <p id="status-info" class="text-gray-400"></p>
+            <button id="logout-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">Logout</button>
         </div>
     </section>
 
@@ -179,10 +182,10 @@
           "gun": "https://cdn.jsdelivr.net/npm/gun@0.2020/gun.js",
           "gun/sea": "https://cdn.jsdelivr.net/npm/gun@0.2020/sea.js",
           "validator": "https://cdn.jsdelivr.net/npm/validator@13.11.0/es/index.js",
-          "bcryptjs": "https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.browser.js"
+          "js-sha256": "https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.js"
         }
       }
     </script>
     <script src="account.js" type="module"></script>
 </body>
-    </html>
+</html>
