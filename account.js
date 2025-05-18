@@ -1,210 +1,259 @@
-const gun = Gun(['https://gun.peers.crunk.house/gun']);
-console.log('GunDB initialized:', gun);
+// account.js
 
-// Utility
-function timestampIST() {
-  const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-  return new Date(date).toISOString();
+// Initialize GUN with a peer relay
+const gun = Gun({
+  peers: ['https://gun-manhattan.herokuapp.com/gun']
+});
+const user = gun.user();
+
+// Utility function to display messages
+function showMessage(message, type = 'info') {
+  Toastify({
+    text: message,
+    duration: 3000,
+    gravity: 'top',
+    position: 'right',
+    backgroundColor: type === 'error' ? '#ff4d4d' : '#4CAF50',
+  }).showToast();
 }
-function isValidUsername(username) {
-  return username.length >= 3 && username.length <= 20 && /^[a-zA-Z0-9]+$/.test(username);
-}
+
+// Utility function to validate email
 function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
 }
+
+// Utility function to validate phone number
 function isValidPhone(phone) {
-  return /^\d+$/.test(phone);
+  const re = /^[0-9]{7,15}$/;
+  return re.test(phone);
 }
+
+// Utility function to validate password
 function isValidPassword(password) {
   return password.length >= 6;
 }
-function displayError(id, msg) {
-  const el = document.getElementById(id);
-  if (el) el.innerText = msg;
-}
-function clearError(id) {
-  const el = document.getElementById(id);
-  if (el) el.innerText = '';
-}
-function clearSignupFields() {
-  ['signup-user', 'signup-email', 'signup-phone', 'signup-pass', 'signup-confirm'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-}
 
-// Load existing session
-window.addEventListener('load', () => {
-  const loggedInUser = localStorage.getItem('loggedInUser');
-  if (loggedInUser) {
-    gun.get('imacx-accounts').get(loggedInUser).once(data => {
-      if (data) {
-        document.getElementById('status-info').innerText = `Logged in as ${loggedInUser}, created: ${data.created}`;
-      }
-    });
-  }
-});
+// Sign Up Functionality
+$('#signup-btn').click(async () => {
+  const username = $('#signup-user').val().trim();
+  const email = $('#signup-email').val().trim();
+  const countryCode = $('#signup-country-code').val();
+  const phone = $('#signup-phone').val().trim();
+  const password = $('#signup-pass').val();
+  const confirmPassword = $('#signup-confirm').val();
 
-// Signup
-document.getElementById('signup-btn')?.addEventListener('click', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('signup-user').value.trim();
-  const email = document.getElementById('signup-email').value.trim().toLowerCase();
-  const phone = document.getElementById('signup-phone').value.trim();
-  const countryCode = document.getElementById('signup-country-code').value;
-  const password = document.getElementById('signup-pass').value;
-  const confirm = document.getElementById('signup-confirm').value;
-  const msg = document.getElementById('signup-msg');
+  // Clear previous error messages
+  $('.error-message').text('');
 
-  clearError('signup-user-error');
-  clearError('signup-email-error');
-  clearError('signup-phone-error');
-  clearError('signup-pass-error');
-  clearError('signup-confirm-error');
-  msg.innerText = '';
-
-  let valid = true;
-  if (!isValidUsername(username)) {
-    displayError('signup-user-error', '3–20 alphanumeric characters.');
-    valid = false;
+  // Input validations
+  if (!username) {
+    $('#signup-user-error').text('Username is required.');
+    return;
   }
   if (!isValidEmail(email)) {
-    displayError('signup-email-error', 'Invalid email.');
-    valid = false;
+    $('#signup-email-error').text('Invalid email format.');
+    return;
   }
   if (!isValidPhone(phone)) {
-    displayError('signup-phone-error', 'Only numbers.');
-    valid = false;
+    $('#signup-phone-error').text('Invalid phone number.');
+    return;
   }
   if (!isValidPassword(password)) {
-    displayError('signup-pass-error', 'Minimum 6 characters.');
-    valid = false;
+    $('#signup-pass-error').text('Password must be at least 6 characters.');
+    return;
   }
-  if (password !== confirm) {
-    displayError('signup-confirm-error', 'Passwords do not match.');
-    valid = false;
-  }
-  if (!valid) return;
-
-  gun.get('imacx-accounts').get(username).once(async existing => {
-    if (existing) {
-      msg.innerText = 'Username already exists.';
-    } else {
-      const pair = await Gun.SEA.pair();
-      const encryptedPass = await Gun.SEA.encrypt(password, pair);
-
-      const user = {
-        username,
-        email,
-        phone: `${countryCode}${phone}`,
-        password: encryptedPass,
-        pub: pair.pub,
-        created: timestampIST()
-      };
-
-      gun.get('imacx-accounts').get(username).put(user, ack => {
-        if (ack.err) {
-          msg.innerText = 'Signup failed.';
-        } else {
-          msg.innerText = 'Account created successfully!';
-          clearSignupFields();
-        }
-      });
-    }
-  });
-});
-
-// Login
-document.getElementById('login-btn')?.addEventListener('click', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const msg = document.getElementById('login-msg');
-  const status = document.getElementById('status-info');
-  msg.innerText = '';
-
-  if (!username || !password) {
-    msg.innerText = 'Both fields required.';
+  if (password !== confirmPassword) {
+    $('#signup-confirm-error').text('Passwords do not match.');
     return;
   }
 
-  gun.get('imacx-accounts').get(username).once(async data => {
-    if (data && data.password && data.pub) {
-      try {
-        const decrypted = await Gun.SEA.decrypt(data.password, { pub: data.pub });
-        if (decrypted === password) {
-          msg.innerText = 'Login successful!';
-          status.innerText = `Logged in as ${username}, created: ${data.created}`;
-          localStorage.setItem('loggedInUser', username);
-          localStorage.setItem('accountId', username);
-        } else {
-          msg.innerText = 'Incorrect credentials.';
-        }
-      } catch (err) {
-        msg.innerText = 'Decryption error.';
-      }
-    } else {
-      msg.innerText = 'User not found.';
+  try {
+    // Check if username already exists
+    const existingUser = await gun.get('users').get(username).once();
+    if (existingUser) {
+      $('#signup-user-error').text('Username already taken.');
+      return;
     }
-  });
+
+    // Create user
+    await user.create(username, password);
+
+    // Authenticate user
+    await user.auth(username, password);
+
+    // Store additional user details
+    const fullPhone = `${countryCode}${phone}`;
+    const timestamp = new Date().toISOString();
+    user.get('profile').put({ email, phone: fullPhone, createdAt: timestamp });
+
+    // Store username reference
+    gun.get('users').get(username).put(user.is.pub);
+
+    showMessage('Sign-up successful!', 'success');
+    $('#signup-msg').text('Sign-up successful!');
+    updateStatus();
+  } catch (error) {
+    console.error('Sign-up error:', error);
+    showMessage('Sign-up failed. Please try again.', 'error');
+  }
 });
 
-// Logout
-document.getElementById('logout-btn')?.addEventListener('click', () => {
-  localStorage.removeItem('loggedInUser');
-  localStorage.removeItem('accountId');
-  document.getElementById('status-info').innerText = 'Logged out.';
-  alert('You have been logged out.');
+// Login Functionality
+$('#login-btn').click(async () => {
+  const username = $('#login-user').val().trim();
+  const password = $('#login-pass').val();
+
+  if (!username || !password) {
+    $('#login-msg').text('Please enter both username and password.');
+    return;
+  }
+
+  try {
+    await user.auth(username, password);
+    showMessage('Login successful!', 'success');
+    $('#login-msg').text('');
+    updateStatus();
+  } catch (error) {
+    console.error('Login error:', error);
+    $('#login-msg').text('Invalid credentials.');
+    showMessage('Login failed. Invalid credentials.', 'error');
+  }
 });
 
-// Recovery
-document.getElementById('recover-pass-btn')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  const username = document.getElementById('recover-user').value.trim();
-  const email = document.getElementById('recover-email').value.trim().toLowerCase();
-  const phone = document.querySelector('#recover-password-box input[type="tel"]').value.trim();
-  const countryCode = document.querySelector('#recover-password-box select').value;
-  const msg = document.getElementById('recover-msg');
+// Logout Functionality
+$('#logout-btn').click(() => {
+  user.leave();
+  showMessage('Logged out successfully.', 'success');
+  updateStatus();
+});
 
-  clearError('recover-user-error');
-  clearError('recover-email-error');
-  clearError('recover-phone-error');
-  msg.innerText = '';
+// Password Recovery Functionality
+$('#recover-pass-btn').click(async () => {
+  const username = $('#recover-user').val().trim();
+  const email = $('#recover-email').val().trim();
+  const countryCode = $('#recover-country-code').val();
+  const phone = $('#recover-phone').val().trim();
 
-  let valid = true;
-  if (!isValidUsername(username)) {
-    displayError('recover-user-error', 'Invalid username.');
-    valid = false;
+  // Clear previous error messages
+  $('.error-message').text('');
+
+  if (!username) {
+    $('#recover-user-error').text('Username is required.');
+    return;
   }
   if (!isValidEmail(email)) {
-    displayError('recover-email-error', 'Invalid email.');
-    valid = false;
+    $('#recover-email-error').text('Invalid email format.');
+    return;
   }
   if (!isValidPhone(phone)) {
-    displayError('recover-phone-error', 'Invalid phone.');
-    valid = false;
+    $('#recover-phone-error').text('Invalid phone number.');
+    return;
   }
-  if (!valid) return;
 
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (data && data.email === email && data.phone === `${countryCode}${phone}`) {
-      msg.innerText = 'Verified. Contact admin for reset.';
-    } else {
-      msg.innerText = 'Details do not match.';
+  try {
+    const userPub = await gun.get('users').get(username).once();
+    if (!userPub) {
+      $('#recover-msg').text('User not found.');
+      return;
     }
-  });
-});
 
-// Cross-tab sync
-window.addEventListener("storage", () => {
-  const status = document.getElementById('status-info');
-  const user = localStorage.getItem('loggedInUser');
-  if (user) {
-    gun.get('imacx-accounts').get(user).once(data => {
-      if (data) {
-        status.innerText = `Logged in as ${user}, created: ${data.created}`;
+    const tempUser = gun.user();
+    tempUser.auth(username, null, async (ack) => {
+      if (ack.err) {
+        $('#recover-msg').text('Authentication failed.');
+        return;
+      }
+
+      const profile = await tempUser.get('profile').once();
+      const storedEmail = profile.email;
+      const storedPhone = profile.phone;
+
+      const inputPhone = `${countryCode}${phone}`;
+
+      if (storedEmail === email && storedPhone === inputPhone) {
+        $('#recover-msg').text('Verification successful. Please reset your password.');
+        // Implement password reset logic here
+      } else {
+        $('#recover-msg').text('Verification failed. Details do not match.');
       }
     });
-  } else {
-    status.innerText = 'Logged out.';
+  } catch (error) {
+    console.error('Password recovery error:', error);
+    $('#recover-msg').text('An error occurred during recovery.');
   }
+});
+
+// Username Recovery Functionality
+$('#recover-username-btn').click(async () => {
+  const email = $('#username-recovery-email').val().trim();
+  const countryCode = $('#username-country-code').val();
+  const phone = $('#username-phone').val().trim();
+  const password = $('#username-recovery-pass').val();
+
+  // Clear previous error messages
+  $('.error-message').text('');
+
+  if (!isValidEmail(email)) {
+    $('#username-recovery-email-error').text('Invalid email format.');
+    return;
+  }
+  if (!isValidPhone(phone)) {
+    $('#username-phone-error').text('Invalid phone number.');
+    return;
+  }
+  if (!isValidPassword(password)) {
+    $('#username-recovery-pass-error').text('Password must be at least 6 characters.');
+    return;
+  }
+
+  try {
+    gun.get('users').map().once(async (pub, username) => {
+      const tempUser = gun.user();
+      tempUser.auth(username, password, async (ack) => {
+        if (ack.err) return;
+
+        const profile = await tempUser.get('profile').once();
+        const storedEmail = profile.email;
+        const storedPhone = profile.phone;
+
+        const inputPhone = `${countryCode}${phone}`;
+
+        if (storedEmail === email && storedPhone === inputPhone) {
+          $('#username-msg').text(`Your username is: ${username}`);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Username recovery error:', error);
+    $('#username-msg').text('An error occurred during recovery.');
+  }
+});
+
+// Update Account Status
+function updateStatus() {
+  if (user.is) {
+    const username = user.is.alias;
+    const pub = user.is.pub;
+    const timestamp = new Date().toISOString();
+    const address = pub;
+
+    $('#status-info').html(`
+      <p><strong>Logged in as:</strong> ${username}</p>
+      <p><strong>Public Key:</strong> ${address}</p>
+      <p><strong>Login Time:</strong> ${timestamp}</p>
+    `);
+  } else {
+    $('#status-info').html('<p>You are not logged in.</p>');
+  }
+}
+
+// Maintain Session Across Pages
+user.recall({ sessionStorage: true }, () => {
+  updateStatus();
+});
+
+// Initialize Status on Page Load
+$(document).ready(() => {
+  updateStatus();
 });
