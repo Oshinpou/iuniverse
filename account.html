@@ -177,13 +177,20 @@
     </script>
 
     <script type="importmap">
-      {
-        "imports": {
-          "gun": "https://cdn.jsdelivr.net/npm/gun@0.2020/gun.js",
-          "gun/sea": "https://cdn.jsdelivr.net/npm/gun@0.2020/sea.js",
-          }
-      }
-    </script>
+{
+  "imports": {
+    "gun": "https://cdn.jsdelivr.net/npm/gun/gun.js",
+    "gun/sea": "https://cdn.jsdelivr.net/npm/gun/sea.js"
+  }
+}
+</script>
+
+<script type="module">
+  import Gun from 'gun';
+  import 'gun/sea';
+
+  const gun = Gun(['https://gun.peers.crunk.house/gun']);
+</script>
     <script src="account.js" type="module"></script>
 </body>
 </html>
