@@ -137,20 +137,43 @@
 
   <div id="headerSticker" class="wave-header">
     <div class="header-container">
-      <div id="account-connect-button"></div>
-     <div class="icon-box" onclick="logoutUser()">
-  <div class="icon-text">Logout</div>
-  <i class="fas fa-sign-out-alt"></i>
+      <div class="header-icons">
+      <!-- Connect Wallet Button -->
+<div id="account-connect-button" class="icon-box" onclick="connectWallet()">
+  <div class="icon-text">Connect Wallet</div>
+  <i class="fas fa-wallet"></i>
 </div>
 
+<!-- Logout Button -->
+<div class="icon-box" onclick="logoutUser()">  
+  <div class="icon-text">Logout</div>  
+  <i class="fas fa-sign-out-alt"></i>  
+</div>  
+
 <script>
-function logoutUser() {
-  localStorage.removeItem('loggedInUser');
-  Toastify({ text: "Logged out", style: { background: "orange" } }).showToast();
-  location.reload(); // or redirect to homepage
+async function connectWallet() {
+  if (window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const userAddress = accounts[0];
+      Toastify({ text: "Wallet connected: " + userAddress, style: { background: "green" } }).showToast();
+      document.querySelector('#account-connect-button .icon-text').textContent = "Wallet Connected";
+    } catch (error) {
+      Toastify({ text: "Wallet connection failed", style: { background: "red" } }).showToast();
+    }
+  } else {
+    Toastify({ text: "MetaMask not detected", style: { background: "gray" } }).showToast();
+  }
+}
+
+function logoutUser() {  
+  localStorage.removeItem('loggedInUser');  
+  Toastify({ text: "Logged out", style: { background: "orange" } }).showToast();  
+  location.reload();  
 }
 </script>
-      <div class="header-icons">
+
+
         <div class="icon-group">
           <div class="icon-box" onclick="viewAccount()"><div class="icon-text">Manage Account</div><i class="fas fa-user-cog"></i></div>
           <div class="icon-box" onclick="viewSaved()"><div class="icon-text">Saved</div><i class="fas fa-bookmark"></i></div>
