@@ -268,7 +268,6 @@ function login() {
       };
       localStorage.setItem('loggedInUser', JSON.stringify(session));
       Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
-      window.location.href = 'index.html'; // change to your homepage
     } else {
       msg.innerText = 'Invalid login credentials.';
     }
