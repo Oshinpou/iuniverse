@@ -177,176 +177,123 @@
 <script>
   
  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-<script>
-const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
 
-function timestampIST() {
-  const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-  return new Date(date).toISOString();
-}
+  <script>
+  const gun = Gun();
 
-// Signup function
-function signup() {
-  const username = document.getElementById('signup-user').value.trim().toLowerCase();
-  const email = document.getElementById('signup-email').value.trim().toLowerCase();
-  const countryCode = document.getElementById('signup-country-code').value.trim();
-  const localPhone = document.getElementById('signup-phone').value.trim();
-  const fullPhone = countryCode + localPhone;
-  const password = document.getElementById('signup-pass').value;
-  const confirm = document.getElementById('signup-confirm').value;
-  const msg = document.getElementById('signup-msg');
-
-  if (!username || !email || !countryCode || !localPhone || !password || !confirm) {
-    msg.innerText = 'All fields are required.';
-    return;
+  function timestampIST() {
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    return new Date(date).toISOString();
   }
 
-  if (password !== confirm) {
-    msg.innerText = 'Passwords do not match.';
-    return;
-  }
+  function signup() {
+    const username = document.getElementById('signup-user').value.trim();
+    const email = document.getElementById('signup-email').value.trim().toLowerCase();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const countryCode = document.getElementById('countryCode').value;
+    const password = document.getElementById('signup-pass').value;
+    const confirm = document.getElementById('signup-confirm').value;
 
-  const accountRef = gun.get('imacx-accounts').get(username);
-  accountRef.once(async data => {
-    if (data) {
-      msg.innerText = 'Username already exists.';
+    const msg = document.getElementById('signup-msg');
+    if (!username || !email || !phone || !password || !confirm) {
+      msg.innerText = 'All fields are required.';
       return;
     }
 
-    let emailExists = false;
-    let fullPhoneExists = false;
+    if (password !== confirm) {
+      msg.innerText = 'Passwords do not match.';
+      return;
+    }
 
-    gun.get('imacx-accounts').map().once(acc => {
-      if (!acc) return;
-      if (acc.email?.toLowerCase() === email) emailExists = true;
-      if (acc.phone === fullPhone) fullPhoneExists = true;
+    const userKey = username;
+    gun.get('imacx-accounts').get(userKey).once(existing => {
+      if (existing) {
+        msg.innerText = 'Username already exists.';
+      } else {
+        const user = {
+          username,
+          email,
+          phone: `${countryCode}${phone}`,
+          password,
+          created: timestampIST()
+        };
+        gun.get('imacx-accounts').get(userKey).put(user);
+        msg.innerText = 'Account created successfully!';
+      }
+    });
+  }
+
+  function login() {
+    const username = document.getElementById('login-user').value.trim();
+    const password = document.getElementById('login-pass').value;
+
+    const msg = document.getElementById('login-msg');
+
+    if (!username || !password) {
+      msg.innerText = 'Enter both username and password.';
+      return;
+    }
+
+    gun.get('imacx-accounts').get(username).once(data => {
+      if (data && data.password === password) {
+        msg.innerText = 'Login successful!';
+        document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+      } else {
+        msg.innerText = 'Invalid login credentials.';
+      }
+    });
+  }
+
+  function recoverPassword() {
+    const username = document.getElementById('recover-user').value.trim();
+    const email = document.getElementById('recover-email').value.trim().toLowerCase();
+    const phone = document.querySelector('#recover-password-box select').value + document.querySelector('#recover-password-box input[type="tel"]').value.trim();
+    const msg = document.getElementById('recover-msg');
+
+    if (!username || !email || !phone) {
+      msg.innerText = 'Please fill all fields.';
+      return;
+    }
+
+    gun.get('imacx-accounts').get(username).once(data => {
+      if (!data) {
+        msg.innerText = 'No account found with that username.';
+        return;
+      }
+
+      if (data.email === email && data.phone === phone) {
+        msg.innerText = `Your password is: ${data.password}`;
+      } else {
+        msg.innerText = 'Credentials do not match. Cannot recover password.';
+      }
+    });
+  }
+
+  function recoverUsername() {
+    const email = document.getElementById('username-recovery-email').value.trim().toLowerCase();
+    const phone = document.querySelector('#recover-username-box select').value + document.querySelector('#recover-username-box input[type="tel"]').value.trim();
+    const password = document.getElementById('username-recovery-pass').value;
+    const msg = document.getElementById('username-msg');
+
+    if (!email || !phone || !password) {
+      msg.innerText = 'Please fill all fields.';
+      return;
+    }
+
+    gun.get('imacx-accounts').map().once(data => {
+      if (data && data.email === email && data.phone === phone && data.password === password) {
+        msg.innerText = `Your username is: ${data.username}`;
+      }
     });
 
+    // In case map doesn't hit a match
     setTimeout(() => {
-      if (emailExists) {
-        msg.innerText = 'Email already in use.';
-        return;
+      if (!msg.innerText.startsWith('Your username')) {
+        msg.innerText = 'No matching account found. Cannot recover username.';
       }
-      if (fullPhoneExists) {
-        msg.innerText = 'Phone number already in use.';
-        return;
-      }
-
-      accountRef.put({
-        username,
-        email,
-        phone: fullPhone,
-        password,
-        createdAt: timestampIST()
-      });
-
-      msg.innerText = 'Account created successfully!';
-    }, 1500);
-  });
-}
-
-// Login function
-function login() {
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const msg = document.getElementById('login-msg');
-
-  if (!username || !password) {
-    msg.innerText = 'Enter both username and password.';
-    return;
+    }, 2000);
   }
 
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (data && data.password === password) {
-      const session = {
-        accountId: username,
-        username: data.username,
-        email: data.email,
-        phone: data.phone,
-        createdAt: data.createdAt,
-        loginAt: timestampIST()
-      };
-      localStorage.setItem('loggedInUser', JSON.stringify(session));
-      Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
-    } else {
-      msg.innerText = 'Invalid login credentials.';
-    }
-  });
-}
-
-// Logout function
-function logout() {
-  localStorage.removeItem('loggedInUser');
-  Toastify({ text: "Logged out!", duration: 1500, backgroundColor: "#f87171" }).showToast();
-  setTimeout(() => {
-    window.location.href = 'login.html'; // change to your login page
-  }, 1000);
-}
-
-// Check and load user session
-function checkLogin() {
-  const user = JSON.parse(localStorage.getItem('loggedInUser'));
-  return user ? user : null;
-}
-
-// Show user info if logged in
-function showLoggedInUser() {
-  const user = checkLogin();
-  const display = document.getElementById('user-info');
-  if (user && display) {
-    display.innerHTML = `Welcome, <b>${user.username}</b>`;
-  }
-}
-
-// Recover password
-function recoverPassword() {
-  const username = document.getElementById('recover-user').value.trim();
-  const email = document.getElementById('recover-email').value.trim().toLowerCase();
-  const phone = document.getElementById('recover-country-code').value + document.getElementById('recover-phone').value.trim();
-  const msg = document.getElementById('recover-msg');
-
-  if (!username || !email || !phone) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
-
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (data && data.email === email && data.phone === phone) {
-      msg.innerText = `Your password is: ${data.password}`;
-    } else {
-      msg.innerText = 'No matching account found.';
-    }
-  });
-}
-
-// Recover username
-function recoverUsername() {
-  const email = document.getElementById('username-recovery-email').value.trim().toLowerCase();
-  const phone = document.getElementById('username-country-code').value + document.getElementById('username-phone').value.trim();
-  const password = document.getElementById('username-recovery-pass').value;
-  const msg = document.getElementById('username-msg');
-
-  if (!email || !phone || !password) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
-
-  let found = false;
-  gun.get('imacx-accounts').map().once(data => {
-    if (data && data.email === email && data.phone === phone && data.password === password) {
-      msg.innerText = `Your username is: ${data.username}`;
-      found = true;
-    }
-  });
-
-  setTimeout(() => {
-    if (!found) msg.innerText = 'No matching account found.';
-  }, 1000);
-}
-
-// Optional: Call on every page to auto-show logged user
-document.addEventListener("DOMContentLoaded", showLoggedInUser);
-         
 </script>
 </body>
 </html>
