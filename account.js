@@ -1,7 +1,6 @@
 // account.js
 import Gun from 'gun';
 import 'gun/sea'; // Optional: For secure data handling with SEA
-import validator from 'validator';
 
 // Initialize GunDB (using a public peer for global access - consider your own setup)
 const gun = Gun(['https://gun.peers.crunk.house/gun']);
@@ -20,13 +19,42 @@ function timestampIST() {
     return new Date(date).toISOString();
 }
 
-// --- Utility Functions (same as before) ---
-function isValidUsername(username) { /* ... */ }
-function isValidEmail(email) { /* ... */ }
-function isValidPhone(phone) { /* ... */ }
-function isValidPassword(password) { /* ... */ }
-function displayError(elementId, message) { /* ... */ }
-function clearError(elementId) { /* ... */ }
+// --- Utility Functions ---
+function isValidUsername(username) {
+    return username.length >= 3 && username.length <= 20 && /^[a-zA-Z0-9]+$/.test(username);
+}
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone) {
+    return /^\d+$/.test(phone); // Basic check for digits only
+    // For more robust validation, consider using a library or more complex regex
+}
+
+function isValidPassword(password) {
+    return password.length >= 6;
+}
+
+function displayError(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerText = message;
+        console.error(`Error in ${elementId}:`, message);
+    } else {
+        console.error(`Element with ID "${elementId}" not found for error display.`);
+    }
+}
+
+function clearError(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerText = '';
+    } else {
+        console.warn(`Element with ID "${elementId}" not found for clearing error.`);
+    }
+}
 
 // Function to generate a secure salt using crypto.getRandomValues
 function generateSalt() {
@@ -93,7 +121,61 @@ document.getElementById('signup-btn')?.addEventListener('click', async (event) =
     event.preventDefault();
     console.log('Signup button clicked!');
 
-    // ... (Input element checks and validation as before) ...
+    const usernameInput = document.getElementById('signup-user');
+    const emailInput = document.getElementById('signup-email');
+    const phoneInput = document.getElementById('signup-phone');
+    const passwordInput = document.getElementById('signup-pass');
+    const confirmInput = document.getElementById('signup-confirm');
+    const countryCodeInput = document.getElementById('signup-country-code');
+    const msg = document.getElementById('signup-msg');
+
+    if (!usernameInput || !emailInput || !phoneInput || !passwordInput || !confirmInput || !countryCodeInput || !msg) {
+        console.error('One or more signup form elements not found!');
+        return;
+    }
+
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const phone = phoneInput.value.trim();
+    const countryCode = countryCodeInput.value;
+    const password = passwordInput.value;
+    const confirm = confirmInput.value;
+
+    console.log('Signup Data:', { username, email, phone, countryCode, password, confirm });
+
+    clearError('signup-user-error');
+    clearError('signup-email-error');
+    clearError('signup-phone-error');
+    clearError('signup-pass-error');
+    clearError('signup-confirm-error');
+    msg.innerText = '';
+
+    let isValid = true;
+
+    if (!isValidUsername(username)) {
+        displayError('signup-user-error', 'Username must be 3-20 alphanumeric characters.');
+        isValid = false;
+    }
+
+    if (!isValidEmail(email)) {
+        displayError('signup-email-error', 'Invalid email address.');
+        isValid = false;
+    }
+
+    if (!isValidPhone(phone)) {
+        displayError('signup-phone-error', 'Invalid phone number.');
+        isValid = false;
+    }
+
+    if (!isValidPassword(password)) {
+        displayError('signup-pass-error', 'Password must be at least 6 characters.');
+        isValid = false;
+    }
+
+    if (password !== confirm) {
+        displayError('signup-confirm-error', 'Passwords do not match.');
+        isValid = false;
+    }
 
     if (!isValid) return;
 
@@ -117,7 +199,18 @@ document.getElementById('signup-btn')?.addEventListener('click', async (event) =
             };
             console.log('Storing new user:', user);
             gun.get('imacx-accounts').get(userKey).put(user, ack => {
-                // ... (Signup ACK handling as before) ...
+                console.log('Signup ACK:', ack);
+                if (ack.err) {
+                    msg.innerText = 'Error creating account on GunDB.';
+                    console.error('GunDB error:', ack.err);
+                } else {
+                    msg.innerText = 'Account created successfully!';
+                    usernameInput.value = '';
+                    emailInput.value = '';
+                    phoneInput.value = '';
+                    passwordInput.value = '';
+                    confirmInput.value = '';
+                }
             });
         }
     });
@@ -128,7 +221,15 @@ document.getElementById('login-btn')?.addEventListener('click', async (event) =>
     event.preventDefault();
     console.log('Login button clicked!');
 
-    // ... (Input element checks) ...
+    const usernameInput = document.getElementById('login-user');
+    const passwordInput = document.getElementById('login-pass');
+    const msg = document.getElementById('login-msg');
+    const statusInfo = document.getElementById('status-info');
+
+    if (!usernameInput || !passwordInput || !msg || !statusInfo) {
+        console.error('One or more login form elements not found!');
+        return;
+    }
 
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
@@ -146,7 +247,11 @@ document.getElementById('login-btn')?.addEventListener('click', async (event) =>
         if (data && data.password && data.salt) {
             const hashedPasswordAttempt = await hashPassword(password, data.salt);
             if (hashedPasswordAttempt === data.password) {
-                // ... (Successful login actions as before) ...
+                msg.innerText = 'Login successful!';
+                statusInfo.innerText = `Logged in as ${username}, created at ${data.created}`;
+                localStorage.setItem('loggedInUser', username);
+                localStorage.setItem('accountId', username); // Store account ID for cross-page access
+                // loadAccountData(username); // Load user-specific data
             } else {
                 msg.innerText = 'Invalid login credentials.';
             }
@@ -156,15 +261,112 @@ document.getElementById('login-btn')?.addEventListener('click', async (event) =>
     });
 });
 
-// --- Recover Password Logic (remains largely the same for now) ---
-document.getElementById('recover-pass-btn')?.addEventListener('click', async (event) => { /* ... */ });
+// --- Recover Password Logic ---
+document.getElementById('recover-pass-btn')?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    console.log('Recover Password button clicked!');
 
-// --- Recover Username Logic (password verification needs to use PBKDF2) ---
+    const usernameInput = document.getElementById('recover-user');
+    const emailInput = document.getElementById('recover-email');
+    const phoneInput = document.querySelector('#recover-password-box input[type="tel"]');
+    const countryCodeInput = document.querySelector('#recover-password-box select');
+    const msg = document.getElementById('recover-msg');
+
+    if (!usernameInput || !emailInput || !phoneInput || !countryCodeInput || !msg) {
+        console.error('One or more recover password elements not found!');
+        return;
+    }
+
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const phone = phoneInput.value.trim();
+    const countryCode = countryCodeInput.value;
+
+    console.log('Recover Password Attempt:', { username, email, phone, countryCode });
+
+    clearError('recover-user-error');
+    clearError('recover-email-error');
+    clearError('recover-phone-error');
+    msg.innerText = '';
+
+    let isValid = true;
+
+    if (!isValidUsername(username)) {
+        displayError('recover-user-error', 'Invalid username format.');
+        isValid = false;
+    }
+
+    if (!isValidEmail(email)) {
+        displayError('recover-email-error', 'Invalid email address.');
+        isValid = false;
+    }
+
+    if (!isValidPhone(phone)) {
+        displayError('recover-phone-error', 'Invalid phone number format.');
+        isValid = false;
+    }
+
+    if (!isValid) return;
+
+    gun.get('imacx-accounts').get(username).once(data => {
+        console.log('Recover Password Data Retrieved:', data);
+        if (!data) {
+            msg.innerText = 'No account found with that username.';
+            return;
+        }
+
+        if (data.email === email && data.phone === `${countryCode}${phone}`) {
+            msg.innerText = `Contact support to recover your password.`; // Implement a real password reset flow
+        } else {
+            msg.innerText = 'Information does not match. Cannot recover password.';
+        }
+    });
+});
+
+// --- Recover Username Logic ---
 document.getElementById('recover-username-btn')?.addEventListener('click', async (event) => {
     event.preventDefault();
     console.log('Recover Username button clicked!');
 
-    // ... (Input element checks and validation) ...
+    const emailInput = document.getElementById('username-recovery-email');
+    const phoneInput = document.querySelector('#recover-username-box input[type="tel"]');
+    const countryCodeInput = document.querySelector('#recover-username-box select');
+    const passwordInput = document.getElementById('username-recovery-pass');
+    const msg = document.getElementById('username-msg');
+
+    if (!emailInput || !phoneInput || !countryCodeInput || !passwordInput || !msg) {
+        console.error('One or more recover username elements not found!');
+        return;
+    }
+
+    const email = emailInput.value.trim().toLowerCase();
+    const phone = phoneInput.value.trim();
+    const countryCode = countryCodeInput.value;
+    const password = passwordInput.value;
+
+    console.log('Recover Username Attempt:', { email, phone, countryCode, password });
+
+    clearError('username-recovery-email-error');
+    clearError('username-phone-error');
+    clearError('username-recovery-pass-error');
+    msg.innerText = '';
+
+    let isValid = true;
+
+    if (!isValidEmail(email)) {
+        displayError('username-recovery-email-error', 'Invalid email address.');
+        isValid = false;
+    }
+
+    if (!isValidPhone(phone)) {
+        displayError('username-phone-error', 'Invalid phone number format.');
+        isValid = false;
+    }
+
+    if (!isValidPassword(password)) {
+        displayError('username-recovery-pass-error', 'Password must be at least 6 characters.');
+        isValid = false;
+    }
 
     if (!isValid) return;
 
@@ -187,17 +389,62 @@ document.getElementById('recover-username-btn')?.addEventListener('click', async
     }, 2000);
 });
 
-// --- Account Data Handling and Cross-Page Persistence (remain the same) ---
-function saveAccountData(accountId, key, value) { /* ... */ }
-function loadAccountData(accountId) { /* ... */ }
-function checkLoggedInStatus() { /* ... */ }
-function logout() { /* ... */ }
+// --- Account Data Handling and Cross-Page Persistence ---
+function saveAccountData(accountId, key, value) {
+    if (accountId) {
+        gun.get('imacx-account-data').get(accountId).put({ [key]: value });
+        console.log(`Data saved for account ${accountId}: ${key} - ${value}`);
+    } else {
+        console.warn('Account ID not available to save data.');
+    }
+}
+
+function loadAccountData(accountId) {
+    if (accountId) {
+        gun.get('imacx-account-data').get(accountId).once(data => {
+            console.log(`Account data loaded for ${accountId}:`, data);
+            // Update UI with loaded data (you'll need to implement this)
+        });
+    } else {
+        console.warn('Account ID not available to load data.');
+    }
+}
+
+function checkLoggedInStatus() {
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    const accountId = localStorage.getItem('accountId');
+    const statusInfo = document.getElementById('status-info');
+    if (loggedInUser && accountId && statusInfo) {
+        statusInfo.innerText = `Logged in as ${loggedInUser} (Persistent)`;
+        // loadAccountData(accountId); // Load account data on page load if logged in
+    }
+}
+
+function logout() {
+    localStorage.removeItem('loggedInUser');
+    localStorage.removeItem('accountId');
+    const statusInfo = document.getElementById('status-info');
+    if (statusInfo) {
+        statusInfo.innerText = 'Logged out';
+    }
+    console.log('Logged out.');
+    // Optionally redirect to login page
+}
+
 document.getElementById('logout-btn')?.addEventListener('click', logout);
 checkLoggedInStatus();
 
 // --- Disconnect/Connect Handling (GunDB handles this automatically) ---
-gun.on('opt', function(opt){ /* ... */ });
-gun.on('hi', function(peer){ /* ... */ });
-gun.on('bye', function(peer){ /* ... */ });
+gun.on('opt', function(opt){
+    console.log("Gun is configured:", opt);
+});
 
-console.log('Account script loaded with crypto.subtle.');
+gun.on('hi', function(peer){
+    console.log("Connected to peer:", peer);
+});
+
+gun.on('bye', function(peer){
+    console.log("Disconnected from peer:", peer);
+});
+
+console.log('Account script loaded with crypto.subtle and vanilla validation.');
