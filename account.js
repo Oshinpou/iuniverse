@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 
 // Initialize GunDB
 const gun = Gun();
+console.log('GunDB initialized:', gun);
 
 // Function to get current timestamp in IST
 function timestampIST() {
@@ -15,32 +16,52 @@ function timestampIST() {
 
 // --- Utility Functions ---
 function isValidUsername(username) {
-    return validator.isLength(username, { min: 3, max: 20 }) && /^[a-zA-Z0-9]+$/.test(username);
+    const valid = validator.isLength(username, { min: 3, max: 20 }) && /^[a-zA-Z0-9]+$/.test(username);
+    console.log('isValidUsername:', username, valid);
+    return valid;
 }
 
 function isValidEmail(email) {
-    return validator.isEmail(email);
+    const valid = validator.isEmail(email);
+    console.log('isValidEmail:', email, valid);
+    return valid;
 }
 
 function isValidPhone(phone) {
-    return validator.isMobilePhone(phone);
+    const valid = validator.isMobilePhone(phone);
+    console.log('isValidPhone:', phone, valid);
+    return valid;
 }
 
 function isValidPassword(password) {
-    return validator.isLength(password, { min: 6 });
+    const valid = validator.isLength(password, { min: 6 });
+    console.log('isValidPassword:', password, valid);
+    return valid;
 }
 
 function displayError(elementId, message) {
-    document.getElementById(elementId).innerText = message;
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerText = message;
+        console.error(`Error in ${elementId}:`, message);
+    } else {
+        console.error(`Element with ID "${elementId}" not found for error display.`);
+    }
 }
 
 function clearError(elementId) {
-    document.getElementById(elementId).innerText = '';
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerText = '';
+    } else {
+        console.warn(`Element with ID "${elementId}" not found for clearing error.`);
+    }
 }
 
 // --- Signup Logic ---
-document.getElementById('signup-btn').addEventListener('click', async (event) => {
+document.getElementById('signup-btn')?.addEventListener('click', async (event) => {
     event.preventDefault(); // Prevent default form submission
+    console.log('Signup button clicked!');
 
     const usernameInput = document.getElementById('signup-user');
     const emailInput = document.getElementById('signup-email');
@@ -50,12 +71,19 @@ document.getElementById('signup-btn').addEventListener('click', async (event) =>
     const countryCodeInput = document.getElementById('signup-country-code');
     const msg = document.getElementById('signup-msg');
 
+    if (!usernameInput || !emailInput || !phoneInput || !passwordInput || !confirmInput || !countryCodeInput || !msg) {
+        console.error('One or more signup form elements not found!');
+        return;
+    }
+
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim().toLowerCase();
     const phone = phoneInput.value.trim();
     const countryCode = countryCodeInput.value;
     const password = passwordInput.value;
     const confirm = confirmInput.value;
+
+    console.log('Signup Data:', { username, email, phone, countryCode, password, confirm });
 
     clearError('signup-user-error');
     clearError('signup-email-error');
@@ -92,14 +120,18 @@ document.getElementById('signup-btn').addEventListener('click', async (event) =>
     }
 
     if (!isValid) {
+        console.log('Signup failed due to validation errors.');
         return;
     }
 
     const userKey = username;
+    console.log('Checking if username exists:', userKey);
     gun.get('imacx-accounts').get(userKey).once(async existing => {
         if (existing) {
+            console.log('Username already exists:', existing);
             msg.innerText = 'Username already exists.';
         } else {
+            console.log('Username is new, proceeding to hash password.');
             bcrypt.hash(password, 10, (err, hash) => {
                 if (err) {
                     console.error("Error hashing password:", err);
@@ -114,30 +146,45 @@ document.getElementById('signup-btn').addEventListener('click', async (event) =>
                     password: hash, // Store the hashed password
                     created: timestampIST()
                 };
-                gun.get('imacx-accounts').get(userKey).put(user);
-                msg.innerText = 'Account created successfully!';
-                // Optionally clear the form
-                document.getElementById('signup-user').value = '';
-                document.getElementById('signup-email').value = '';
-                document.getElementById('signup-phone').value = '';
-                document.getElementById('signup-pass').value = '';
-                document.getElementById('signup-confirm').value = '';
+                console.log('Storing new user:', user);
+                gun.get('imacx-accounts').get(userKey).put(user, ack => {
+                    console.log('Signup ACK:', ack);
+                    if (ack.err) {
+                        msg.innerText = 'Error creating account on GunDB.';
+                        console.error('GunDB error:', ack.err);
+                    } else {
+                        msg.innerText = 'Account created successfully!';
+                        // Optionally clear the form
+                        if (usernameInput) usernameInput.value = '';
+                        if (emailInput) emailInput.value = '';
+                        if (phoneInput) phoneInput.value = '';
+                        if (passwordInput) passwordInput.value = '';
+                        if (confirmInput) confirmInput.value = '';
+                    }
+                });
             });
         }
     });
 });
 
 // --- Login Logic ---
-document.getElementById('login-btn').addEventListener('click', (event) => {
+document.getElementById('login-btn')?.addEventListener('click', (event) => {
     event.preventDefault();
+    console.log('Login button clicked!');
 
     const usernameInput = document.getElementById('login-user');
     const passwordInput = document.getElementById('login-pass');
     const msg = document.getElementById('login-msg');
 
+    if (!usernameInput || !passwordInput || !msg) {
+        console.error('One or more login form elements not found!');
+        return;
+    }
+
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
 
+    console.log('Login Attempt:', { username, password });
     msg.innerText = '';
 
     if (!username || !password) {
@@ -146,6 +193,7 @@ document.getElementById('login-btn').addEventListener('click', (event) => {
     }
 
     gun.get('imacx-accounts').get(username).once(data => {
+        console.log('Login data retrieved:', data);
         if (data) {
             bcrypt.compare(password, data.password, (err, result) => {
                 if (err) {
@@ -155,7 +203,10 @@ document.getElementById('login-btn').addEventListener('click', (event) => {
                 }
                 if (result) {
                     msg.innerText = 'Login successful!';
-                    document.getElementById('status-info').innerText = `Logged in as ${username}, created at ${data.created}`;
+                    const statusInfo = document.getElementById('status-info');
+                    if (statusInfo) {
+                        statusInfo.innerText = `Logged in as ${username}, created at ${data.created}`;
+                    }
                     localStorage.setItem('loggedInUser', username);
                     // Optionally redirect
                 } else {
@@ -169,8 +220,9 @@ document.getElementById('login-btn').addEventListener('click', (event) => {
 });
 
 // --- Recover Password Logic ---
-document.getElementById('recover-pass-btn').addEventListener('click', (event) => {
+document.getElementById('recover-pass-btn')?.addEventListener('click', (event) => {
     event.preventDefault();
+    console.log('Recover Password button clicked!');
 
     const usernameInput = document.getElementById('recover-user');
     const emailInput = document.getElementById('recover-email');
@@ -178,10 +230,17 @@ document.getElementById('recover-pass-btn').addEventListener('click', (event) =>
     const countryCodeInput = document.querySelector('#recover-password-box select');
     const msg = document.getElementById('recover-msg');
 
+    if (!usernameInput || !emailInput || !phoneInput || !countryCodeInput || !msg) {
+        console.error('One or more recover password elements not found!');
+        return;
+    }
+
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim().toLowerCase();
     const phone = phoneInput.value.trim();
     const countryCode = countryCodeInput.value;
+
+    console.log('Recover Password Attempt:', { username, email, phone, countryCode });
 
     clearError('recover-user-error');
     clearError('recover-email-error');
@@ -210,6 +269,7 @@ document.getElementById('recover-pass-btn').addEventListener('click', (event) =>
     }
 
     gun.get('imacx-accounts').get(username).once(data => {
+        console.log('Recover Password Data Retrieved:', data);
         if (!data) {
             msg.innerText = 'No account found with that username.';
             return;
@@ -224,8 +284,9 @@ document.getElementById('recover-pass-btn').addEventListener('click', (event) =>
 });
 
 // --- Recover Username Logic ---
-document.getElementById('recover-username-btn').addEventListener('click', (event) => {
+document.getElementById('recover-username-btn')?.addEventListener('click', (event) => {
     event.preventDefault();
+    console.log('Recover Username button clicked!');
 
     const emailInput = document.getElementById('username-recovery-email');
     const phoneInput = document.querySelector('#recover-username-box input[type="tel"]');
@@ -233,10 +294,17 @@ document.getElementById('recover-username-btn').addEventListener('click', (event
     const passwordInput = document.getElementById('username-recovery-pass');
     const msg = document.getElementById('username-msg');
 
+    if (!emailInput || !phoneInput || !countryCodeInput || !passwordInput || !msg) {
+        console.error('One or more recover username elements not found!');
+        return;
+    }
+
     const email = emailInput.value.trim().toLowerCase();
     const phone = phoneInput.value.trim();
     const countryCode = countryCodeInput.value;
     const password = passwordInput.value;
+
+    console.log('Recover Username Attempt:', { email, phone, countryCode, password });
 
     clearError('username-recovery-email-error');
     clearError('username-phone-error');
@@ -265,10 +333,11 @@ document.getElementById('recover-username-btn').addEventListener('click', (event
     }
 
     gun.get('imacx-accounts').map().once(data => {
+        console.log('Recover Username Data Iterated:', data);
         if (data && data.email === email && data.phone === `${countryCode}${phone}`) {
             bcrypt.compare(password, data.password, (err, result) => {
                 if (err) {
-                    console.error("Error comparing passwords:", err);
+                    console.error("Error comparing passwords for username recovery:", err);
                     msg.innerText = 'Could not verify account.';
                     return;
                 }
