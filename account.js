@@ -1,3 +1,9 @@
+// account.js
+import Gun from 'gun';
+import 'gun/sea'; // Optional: For secure data handling with SEA
+import validator from 'validator';
+import bcrypt from 'bcryptjs';
+
 // Initialize GunDB
 const gun = Gun();
 
@@ -102,7 +108,7 @@ document.getElementById('signup-btn').addEventListener('click', async (event) =>
                 }
 
                 const user = {
-                  username,
+                    username,
                     email,
                     phone: `${countryCode}${phone}`,
                     password: hash, // Store the hashed password
