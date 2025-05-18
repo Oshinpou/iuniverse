@@ -235,267 +235,99 @@
 <script>
 <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 <script>
-const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
+   // Initialize Gun with peers const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] }); const user = gun.user();
 
-function timestampIST() {
-  const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-  return new Date(date).toISOString();
-}
+function timestampIST() { const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }); return new Date(date).toISOString(); }
 
-// Signup function
-function signup() {
-  const username = document.getElementById('signup-user').value.trim().toLowerCase();
-  const email = document.getElementById('signup-email').value.trim().toLowerCase();
-  const countryCode = document.getElementById('signup-country-code').value.trim();
-  const localPhone = document.getElementById('signup-phone').value.trim();
-  const fullPhone = countryCode + localPhone;
-  const password = document.getElementById('signup-pass').value;
-  const confirm = document.getElementById('signup-confirm').value;
-  const msg = document.getElementById('signup-msg');
+// Save and Retrieve Session function saveSessionLocally(data) { localStorage.setItem('imacx_user', JSON.stringify(data)); }
 
-  if (!username || !email || !countryCode || !localPhone || !password || !confirm) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
+function getSession() { const data = localStorage.getItem('imacx_user'); return data ? JSON.parse(data) : null; }
 
-  if (password !== confirm) {
-    msg.innerText = 'Passwords do not match.';
-    return;
-  }
+function clearSession() { localStorage.removeItem('imacx_user'); }
 
-  const accountRef = gun.get('imacx-accounts').get(username);
-  accountRef.once(async data => {
-    if (data) {
-      msg.innerText = 'Username already exists.';
-      return;
-    }
+// Signup function function signup() { const username = document.getElementById('signup-user').value.trim().toLowerCase(); const email = document.getElementById('signup-email').value.trim().toLowerCase(); const countryCode = document.getElementById('signup-country-code').value.trim(); const localPhone = document.getElementById('signup-phone').value.trim(); const fullPhone = countryCode + localPhone; const password = document.getElementById('signup-pass').value; const confirm = document.getElementById('signup-confirm').value; const msg = document.getElementById('signup-msg');
 
-    let emailExists = false;
-    let fullPhoneExists = false;
+msg.innerText = '';
 
-    gun.get('imacx-accounts').map().once(acc => {
-      if (!acc) return;
-      if (acc.email?.toLowerCase() === email) emailExists = true;
-      if (acc.phone === fullPhone) fullPhoneExists = true;
-    });
+if (!username || !email || !countryCode || !localPhone || !password || !confirm) { msg.innerText = 'All fields are required.'; return; }
 
-    setTimeout(() => {
-      if (emailExists) {
-        msg.innerText = 'Email already in use.';
-        return;
-      }
-      if (fullPhoneExists) {
-        msg.innerText = 'Phone number already in use.';
-        return;
-      }
+if (password !== confirm) { msg.innerText = 'Passwords do not match.'; return; }
 
-      accountRef.put({
-        username,
-        email,
-        phone: fullPhone,
-        password,
-        createdAt: timestampIST()
-      });
+const accountRef = gun.get('imacx-accounts').get(username); accountRef.once(data => { if (data) { msg.innerText = 'Username already exists.'; return; }
 
-      msg.innerText = 'Account created successfully!';
-    }, 1500);
-  });
-}
+let emailExists = false;
+let fullPhoneExists = false;
 
-// Login function
-function login() {
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const msg = document.getElementById('login-msg');
-
-  if (!username || !password) {
-    msg.innerText = 'Enter both username and password.';
-    return;
-  }
-
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (data && data.password === password) {
-      const session = {
-        accountId: username,
-        username: data.username,
-        email: data.email,
-        phone: data.phone,
-        createdAt: data.createdAt,
-        loginAt: timestampIST()
-      };
-      localStorage.setItem('loggedInUser', JSON.stringify(session));
-      Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
-      window.location.href = 'index.html'; // change to your homepage
-    } else {
-      msg.innerText = 'Invalid login credentials.';
-    }
-  });
-}
-
-// Logout function
-function logout() {
-  localStorage.removeItem('loggedInUser');
-  Toastify({ text: "Logged out!", duration: 1500, backgroundColor: "#f87171" }).showToast();
-  setTimeout(() => {
-    window.location.href = 'login.html'; // change to your login page
-  }, 1000);
-}
-
-// Check and load user session
-function checkLogin() {
-  const user = JSON.parse(localStorage.getItem('loggedInUser'));
-  return user ? user : null;
-}
-
-// Show user info if logged in
-function showLoggedInUser() {
-  const user = checkLogin();
-  const display = document.getElementById('user-info');
-  if (user && display) {
-    display.innerHTML = `Welcome, <b>${user.username}</b>`;
-  }
-}
-
-// Recover password
-function recoverPassword() {
-  const username = document.getElementById('recover-user').value.trim();
-  const email = document.getElementById('recover-email').value.trim().toLowerCase();
-  const phone = document.getElementById('recover-country-code').value + document.getElementById('recover-phone').value.trim();
-  const msg = document.getElementById('recover-msg');
-
-  if (!username || !email || !phone) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
-
-  gun.get('imacx-accounts').get(username).once(data => {
-    if (data && data.email === email && data.phone === phone) {
-      msg.innerText = `Your password is: ${data.password}`;
-    } else {
-      msg.innerText = 'No matching account found.';
-    }
-  });
-}
-
-// Recover username
-function recoverUsername() {
-  const email = document.getElementById('username-recovery-email').value.trim().toLowerCase();
-  const phone = document.getElementById('username-country-code').value + document.getElementById('username-phone').value.trim();
-  const password = document.getElementById('username-recovery-pass').value;
-  const msg = document.getElementById('username-msg');
-
-  if (!email || !phone || !password) {
-    msg.innerText = 'All fields are required.';
-    return;
-  }
-
-  let found = false;
-  gun.get('imacx-accounts').map().once(data => {
-    if (data && data.email === email && data.phone === phone && data.password === password) {
-      msg.innerText = `Your username is: ${data.username}`;
-      found = true;
-    }
-  });
-
-  setTimeout(() => {
-    if (!found) msg.innerText = 'No matching account found.';
-  }, 1000);
-}
-
-// Optional: Call on every page to auto-show logged user
-document.addEventListener("DOMContentLoaded", showLoggedInUser);
-
-// Initialize Gun, Peer-to-Peer, and Local Store
-const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-const user = gun.user();
-
-// Global Account Sync Helpers
-function saveSessionLocally(data) {
-  localStorage.setItem('imacx_user', JSON.stringify(data));
-}
-
-function getSession() {
-  const data = localStorage.getItem('imacx_user');
-  return data ? JSON.parse(data) : null;
-}
-
-function clearSession() {
-  localStorage.removeItem('imacx_user');
-}
-
-// Check Session on Load
-const session = getSession();
-if (session && session.username) {
-  loginToGun(session.username, session.password, true);
-}
-
-// Sign Up
-function signup() {
-  const username = $('#signup-user').val().trim();
-  const password = $('#signup-pass').val();
-  const email = $('#signup-email').val();
-  if (!username || !password || !email) return $('#signup-msg').text('Fill all fields');
-
-  user.create(username, password, (ack) => {
-    if (ack.err) return $('#signup-msg').text(ack.err);
-    user.auth(username, password, (ack2) => {
-      if (ack2.err) return $('#signup-msg').text(ack2.err);
-      user.get('email').put(email);
-      saveSessionLocally({ username, password });
-      window.location.reload();
-    });
-  });
-}
-
-// Login
-function login() {
-  const username = $('#login-user').val().trim();
-  const password = $('#login-pass').val();
-  loginToGun(username, password);
-}
-
-function loginToGun(username, password, silent = false) {
-  user.auth(username, password, (ack) => {
-    if (ack.err) {
-      if (!silent) $('#login-msg').text(ack.err);
-      return;
-    }
-    saveSessionLocally({ username, password });
-    updateHeaderWallet();
-    if (!silent) location.reload();
-  });
-}
-
-// Recover Functions (Stub for now)
-function recoverPassword() {
-  $('#recover-msg').text('Recovery system under development.');
-}
-
-function logout() {
-  user.leave();
-  clearSession();
-  window.location.reload();
-}
-
-// Update Wallet Display in Header
-function updateHeaderWallet() {
-  const walletId = user.is && user.is.pub;
-  if (walletId) {
-    $('header').find('.wallet-display').text(`Wallet: ${walletId.substring(0, 8)}...`);
-  }
-}
-
-// Cross Page Logout Support
-$(document).ready(() => {
-  if (session) {
-    updateHeaderWallet();
-    // Auto insert logout button to header if exists
-    if ($('header').length > 0) {
-      $('header').append('<button onclick="logout()" class="btn btn-danger">Logout</button>');
-    }
-  }
+gun.get('imacx-accounts').map().once(acc => {
+  if (!acc) return;
+  if (acc.email?.toLowerCase() === email) emailExists = true;
+  if (acc.phone === fullPhone) fullPhoneExists = true;
 });
 
-    
+setTimeout(() => {
+  if (emailExists) {
+    msg.innerText = 'Email already in use.';
+    return;
+  }
+  if (fullPhoneExists) {
+    msg.innerText = 'Phone number already in use.';
+    return;
+  }
+
+  accountRef.put({
+    username,
+    email,
+    phone: fullPhone,
+    password,
+    createdAt: timestampIST()
+  });
+
+  saveSessionLocally({ username, password });
+  msg.innerText = 'Account created successfully!';
+  Toastify({ text: "Signup successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast();
+  setTimeout(() => location.href = 'index.html', 1500);
+}, 1500);
+
+}); }
+
+// Login function function login() { const username = document.getElementById('login-user').value.trim(); const password = document.getElementById('login-pass').value; const msg = document.getElementById('login-msg');
+
+msg.innerText = '';
+
+if (!username || !password) { msg.innerText = 'Enter both username and password.'; return; }
+
+gun.get('imacx-accounts').get(username).once(data => { if (data && data.password === password) { const session = { username: data.username, email: data.email, phone: data.phone, createdAt: data.createdAt, loginAt: timestampIST(), password }; saveSessionLocally(session); Toastify({ text: "Login successful!", duration: 2000, backgroundColor: "#22c55e" }).showToast(); setTimeout(() => location.href = 'index.html', 1000); } else { msg.innerText = 'Invalid login credentials.'; } }); }
+
+function logout() { clearSession(); Toastify({ text: "Logged out!", duration: 1500, backgroundColor: "#f87171" }).showToast(); setTimeout(() => location.href = 'login.html', 1000); }
+
+function checkLogin() { return getSession(); }
+
+function showLoggedInUser() { const user = checkLogin(); const display = document.getElementById('user-info'); if (user && display) { display.innerHTML = Welcome, <b>${user.username}</b>; } }
+
+document.addEventListener("DOMContentLoaded", showLoggedInUser);
+
+function recoverPassword() { const username = document.getElementById('recover-user').value.trim(); const email = document.getElementById('recover-email').value.trim().toLowerCase(); const phone = document.getElementById('recover-country-code').value + document.getElementById('recover-phone').value.trim(); const msg = document.getElementById('recover-msg');
+
+msg.innerText = '';
+
+if (!username || !email || !phone) { msg.innerText = 'All fields are required.'; return; }
+
+gun.get('imacx-accounts').get(username).once(data => { if (data && data.email === email && data.phone === phone) { msg.innerText = Your password is: ${data.password}; } else { msg.innerText = 'No matching account found.'; } }); }
+
+function recoverUsername() { const email = document.getElementById('username-recovery-email').value.trim().toLowerCase(); const phone = document.getElementById('username-country-code').value + document.getElementById('username-phone').value.trim(); const password = document.getElementById('username-recovery-pass').value; const msg = document.getElementById('username-msg');
+
+msg.innerText = '';
+
+if (!email || !phone || !password) { msg.innerText = 'All fields are required.'; return; }
+
+let found = false; gun.get('imacx-accounts').map().once(data => { if (data && data.email === email && data.phone === phone && data.password === password) { msg.innerText = Your username is: ${data.username}; found = true; } });
+
+setTimeout(() => { if (!found) msg.innerText = 'No matching account found.'; }, 1500); }
+
+// Wallet Header Update function updateHeaderWallet() { const session = getSession(); if (session && session.username) { $('header').find('.wallet-display').text(Wallet: ${session.username.substring(0, 8)}...); } }
+
+// Insert Logout Button if Logged In $(document).ready(() => { const session = getSession(); if (session) { updateHeaderWallet(); if ($('header').length > 0 && $('.logout-btn').length === 0) { $('header').append('<button onclick="logout()" class="btn btn-danger logout-btn">Logout</button>'); } } });
+
+
   </script></body>
 </html>
