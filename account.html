@@ -405,6 +405,96 @@ function recoverUsername() {
 // Optional: Call on every page to auto-show logged user
 document.addEventListener("DOMContentLoaded", showLoggedInUser);
 
+// Initialize Gun, Peer-to-Peer, and Local Store
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+const user = gun.user();
+
+// Global Account Sync Helpers
+function saveSessionLocally(data) {
+  localStorage.setItem('imacx_user', JSON.stringify(data));
+}
+
+function getSession() {
+  const data = localStorage.getItem('imacx_user');
+  return data ? JSON.parse(data) : null;
+}
+
+function clearSession() {
+  localStorage.removeItem('imacx_user');
+}
+
+// Check Session on Load
+const session = getSession();
+if (session && session.username) {
+  loginToGun(session.username, session.password, true);
+}
+
+// Sign Up
+function signup() {
+  const username = $('#signup-user').val().trim();
+  const password = $('#signup-pass').val();
+  const email = $('#signup-email').val();
+  if (!username || !password || !email) return $('#signup-msg').text('Fill all fields');
+
+  user.create(username, password, (ack) => {
+    if (ack.err) return $('#signup-msg').text(ack.err);
+    user.auth(username, password, (ack2) => {
+      if (ack2.err) return $('#signup-msg').text(ack2.err);
+      user.get('email').put(email);
+      saveSessionLocally({ username, password });
+      window.location.reload();
+    });
+  });
+}
+
+// Login
+function login() {
+  const username = $('#login-user').val().trim();
+  const password = $('#login-pass').val();
+  loginToGun(username, password);
+}
+
+function loginToGun(username, password, silent = false) {
+  user.auth(username, password, (ack) => {
+    if (ack.err) {
+      if (!silent) $('#login-msg').text(ack.err);
+      return;
+    }
+    saveSessionLocally({ username, password });
+    updateHeaderWallet();
+    if (!silent) location.reload();
+  });
+}
+
+// Recover Functions (Stub for now)
+function recoverPassword() {
+  $('#recover-msg').text('Recovery system under development.');
+}
+
+function logout() {
+  user.leave();
+  clearSession();
+  window.location.reload();
+}
+
+// Update Wallet Display in Header
+function updateHeaderWallet() {
+  const walletId = user.is && user.is.pub;
+  if (walletId) {
+    $('header').find('.wallet-display').text(`Wallet: ${walletId.substring(0, 8)}...`);
+  }
+}
+
+// Cross Page Logout Support
+$(document).ready(() => {
+  if (session) {
+    updateHeaderWallet();
+    // Auto insert logout button to header if exists
+    if ($('header').length > 0) {
+      $('header').append('<button onclick="logout()" class="btn btn-danger">Logout</button>');
+    }
+  }
+});
 
     
   </script></body>
