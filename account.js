@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 const gun = Gun();
-const users = gun.get('imacx-users');
+const users = gun.get('imacx-accounts');
 
 // Check if email or phone exists
 function checkIfEmailOrPhoneExists(email, fullPhone, callback) {
