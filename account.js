@@ -115,10 +115,19 @@ async function getAccountByPhone(phoneWithCode) {
     });
 }
 
+async function getAccountInfo(accountId) {
+    return new Promise(resolve => {
+        gun.user(accountId).get('info').once(resolve);
+    });
+}
+
 async function setLoggedInStatus(accountId) {
     localStorage.setItem('imacx_logged_in', 'true');
     localStorage.setItem('imacx_current_account', accountId);
+    localStorage.setItem('imacx_last_active', generateTimestamp());
     updateAccountStatus();
+    // Send a custom event for cross-page login
+    window.dispatchEvent(new CustomEvent('imacx_login', { detail: { accountId: accountId } }));
 }
 
 function setLoggedOutStatus() {
@@ -127,16 +136,22 @@ function setLoggedOutStatus() {
     localStorage.removeItem('imacx_alias');
     localStorage.removeItem('imacx_auth');
     localStorage.removeItem('imacx_pair');
+    localStorage.removeItem('imacx_last_active');
     updateAccountStatus();
+    // Send a custom event for cross-page logout
+    window.dispatchEvent(new CustomEvent('imacx_logout'));
 }
 
-function updateAccountStatus() {
+async function updateAccountStatus() {
     const statusInfo = document.getElementById('status-info');
     const logoutBtn = document.getElementById('logout-btn');
     const loggedInAccountId = localStorage.getItem('imacx_current_account');
+    const lastActive = localStorage.getItem('imacx_last_active');
 
     if (loggedInAccountId) {
-        statusInfo.textContent = `Logged in as: ${loggedInAccountId}`;
+        const accountInfo = await getAccountInfo(loggedInAccountId);
+        const username = accountInfo ? accountInfo.username : 'Unknown';
+        statusInfo.textContent = `Logged in as: ${username} (${loggedInAccountId}) - Last active: ${lastActive || 'N/A'}`;
         logoutBtn.style.display = 'block';
     } else {
         statusInfo.textContent = 'Not logged in.';
@@ -165,6 +180,22 @@ async function continuousLogin() {
         setLoggedOutStatus();
     }
 }
+
+// --- Cross-page Event Handling ---
+
+window.addEventListener('storage', (event) => {
+    if (event.key === 'imacx_logged_in') {
+        continuousLogin(); // Re-evaluate login status on storage change
+    }
+});
+
+window.addEventListener('imacx_login', () => {
+    updateAccountStatus();
+});
+
+window.addEventListener('imacx_logout', () => {
+    updateAccountStatus();
+});
 
 // --- Event Listeners ---
 
@@ -282,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await storeAccountData(accountId, { info: accountInfo, data: {} }); // Initial data structure
 
-                displayMessage('signup-msg', 'Account created successfully! You can now log in.');
+                displayMessage('signup-msg', 'Account created successfully!');
                 // Optionally log in the user immediately after signup
                 user.auth(username, password, async (authAck) => {
                     if (!authAck.err) {
@@ -299,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Recover Password (Basic implementation - needs backend integration for actual reset)
+    // Recover Password
     document.getElementById('recover-pass-btn').addEventListener('click', async () => {
         clearErrors();
         const username = document.getElementById('recover-user').value;
@@ -313,22 +344,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // In a real scenario, you would send a password reset link/code to the user's email or phone.
-        // This is a client-side simulation.
         let foundAccount = null;
         if (username) foundAccount = await getAccountByUsername(username);
         if (!foundAccount && email) foundAccount = await getAccountByEmail(email);
         if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
 
-        if (foundAccount) {
+        if (foundAccount && foundAccount.info) {
             displayMessage('recover-msg', 'Password recovery initiated. Please check your email/phone (simulation).');
-            // In a real app, trigger a backend function to send a reset link/code.
+            // In a real app, you would now trigger a backend function to send a reset link/code
+            // based on the user's verified email or phone number.
         } else {
             displayMessage('recover-msg', 'No account found matching the provided information.', true);
         }
     });
 
-    // Recover Username (Basic implementation - needs backend integration for actual retrieval)
+    // Recover Username
     document.getElementById('recover-username-btn').addEventListener('click', async () => {
         clearErrors();
         const email = document.getElementById('username-recovery-email').value;
@@ -346,16 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // In a real scenario, you would verify the password and then send the username to the email/phone.
-        // This is a client-side simulation.
         let foundAccount = null;
         if (email) foundAccount = await getAccountByEmail(email);
         if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
 
-        if (foundAccount) {
-            // Simulate password verification (in real app, compare hash)
-            const userNode = gun.user(foundAccount.info.id);
-            userNode.auth(foundAccount.info.username, password, ack => {
+        if (foundAccount && foundAccount.info) {
+            // Basic password check (not secure for real-world, should use hashed passwords)
+            const user = gun.user(foundAccount.info.id);
+            user.auth(foundAccount.info.username, password, ack => {
                 if (!ack.err) {
                     displayMessage('recover-username-msg', `Your username is: ${foundAccount.info.username}`);
                     // In a real app, you might also send this to the user's email/phone.
@@ -368,22 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// --- Cross-page Connect/Disconnect and Login Status ---
-
-// Listen for custom events to handle cross-page communication
-window.addEventListener('imacx_login', (event) => {
-    if (event.detail && event.detail.accountId) {
-        setLoggedInStatus(event.detail.accountId);
-    }
-});
-
-window.addEventListener('imacx_logout', () => {
-    setLoggedOutStatus();
-});
-
-// Periodically check login status (can be optimized with BroadcastChannel API if wider browser support is needed)
-setInterval(updateAccountStatus, 1000);
 
 // --- Global Distributed Storage and Account Data ---
 
