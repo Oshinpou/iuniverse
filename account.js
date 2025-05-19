@@ -292,37 +292,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-document.getElementById("signup-button").addEventListener("click", async function () {
-  const email = document.getElementById("signup-email").value.trim().toLowerCase();
-  const countryCode = document.getElementById("signup-country-code").value;
-  const phone = document.getElementById("signup-phone").value.trim();
-  const fullPhone = countryCode + phone;
+    
+document.getElementById("signup-button").addEventListener("click", function () {
+  var email = document.getElementById("signup-email").value.trim().toLowerCase();
+  var countryCode = document.getElementById("signup-country-code").value;
+  var phone = document.getElementById("signup-phone").value.trim();
+  var fullPhone = countryCode + phone;
 
   // Clear previous error messages
   document.getElementById("signup-email-error").textContent = "";
 
-  try {
-    const response = await fetch("/api/check-user-exists", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, phone: fullPhone }),
-    });
+  // Prepare request data
+  var requestData = JSON.stringify({ email: email, phone: fullPhone });
 
-    const result = await response.json();
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/check-email-or-phone-exists", true); // Updated endpoint
+  xhr.setRequestHeader("Content-Type", "application/json");
 
-    if (response.status === 400) {
-      document.getElementById("signup-email-error").textContent = result.message;
-      return;
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        var result = JSON.parse(xhr.responseText);
+        
+        if (result.exists) {
+          document.getElementById("signup-email-error").textContent = "Same email or phone number with this country code already used.";
+          return;
+        }
+
+        // Continue signup
+        continueSignup(email, fullPhone);
+
+      } else {
+        document.getElementById("signup-email-error").textContent = "Error checking credentials.";
+      }
     }
+  };
 
-    // Continue to final signup logic (e.g., password validation, actual signup call)
-    continueSignup(email, fullPhone);
-
-  } catch (error) {
-    document.getElementById("signup-email-error").textContent = "Error checking user existence.";
-    console.error(error);
-  }
+  xhr.send(requestData);
 });
+
         
 
     // Recover Password
