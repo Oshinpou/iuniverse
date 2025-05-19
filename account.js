@@ -237,27 +237,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 const gun = Gun();
-const users = gun.get('imacx-accounts');
+const users = gun.get('imacx-users');
 
-// Check if email or phone number with country code exists
+// Check if email or phone exists
 function checkIfEmailOrPhoneExists(email, fullPhone, callback) {
-    let exists = false;
+    let isUsed = false;
 
     users.map().once((data) => {
         if (data) {
-            const existingEmail = data.email?.toLowerCase();
-            const existingPhone = data.phone;
+            const storedEmail = data.email?.toLowerCase();
+            const storedPhone = data.phone;
 
-            if (existingEmail === email || existingPhone === fullPhone) {
-                exists = true;
+            if (storedEmail === email || storedPhone === fullPhone) {
+                isUsed = true;
                 callback(true);
             }
         }
     });
 
-    // Add delay to wait for GUN map read
+    // Wait briefly to collect map results
     setTimeout(() => {
-        if (!exists) callback(false);
+        callback(isUsed);
     }, 1000);
 }
 
@@ -269,7 +269,7 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
     const password = document.getElementById("signup-pass").value;
     const confirm = document.getElementById("signup-confirm").value;
 
-    // Clear error messages
+    // Clear previous errors
     document.getElementById("signup-user-error").textContent = "";
     document.getElementById("signup-email-error").textContent = "";
     document.getElementById("signup-phone-error").textContent = "";
@@ -277,30 +277,30 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
     document.getElementById("signup-confirm-error").textContent = "";
     document.getElementById("signup-msg").textContent = "";
 
-    // Validation
+    // Basic validation
     if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
     if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
     if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
-    if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password must be at least 6 characters";
+    if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password too short";
     if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
 
     const fullPhone = `${countryCode}${phone}`;
-    const fullID = `imacx-user-${username}`;
+    const userId = `imacx-user-${username}`;
 
-    // Step 1: Check if email or phone is already used
-    checkIfEmailOrPhoneExists(email, fullPhone, (exists) => {
-        if (exists) {
-            document.getElementById("signup-email-error").textContent = "Same email or phone number already used.";
+    // Check for duplicate email or phone
+    checkIfEmailOrPhoneExists(email, fullPhone, (isUsed) => {
+        if (isUsed) {
+            document.getElementById("signup-msg").textContent = "This email or phone number is already in use.";
             return;
         }
 
-        // Step 2: Check if username is already taken
-        users.get(fullID).once((data) => {
+        // Check if username is taken
+        users.get(userId).once((data) => {
             if (data) {
                 document.getElementById("signup-user-error").textContent = "Username already exists";
             } else {
-                // Step 3: Encrypt and Store
-                Gun.SEA.pair().then(async pair => {
+                // Proceed with creating user
+                Gun.SEA.pair().then(async (pair) => {
                     const encryptedPass = await Gun.SEA.encrypt(password, pair);
                     const encryptedConfirm = await Gun.SEA.encrypt(confirm, pair);
                     const istTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -316,9 +316,9 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
                         alias: username
                     };
 
-                    users.get(fullID).put(userData, (ack) => {
+                    users.get(userId).put(userData, (ack) => {
                         if (ack.err) {
-                            document.getElementById("signup-msg").textContent = "Error signing up. Try again.";
+                            document.getElementById("signup-msg").textContent = "Signup failed. Try again.";
                         } else {
                             document.getElementById("signup-msg").textContent = "Signup successful!";
                         }
@@ -328,7 +328,6 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
         });
     });
 });
-
 
         
 
