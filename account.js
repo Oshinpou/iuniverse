@@ -235,102 +235,104 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMessage('status-info', 'Logged out.');
     });
 
-    // Sign Up
-    document.getElementById('signup-btn').addEventListener('click', async () => {
-        clearErrors();
-        const username = document.getElementById('signup-user').value;
-        const email = document.getElementById('signup-email').value;
-        const countryCode = document.getElementById('signup-country-code').value;
-        const phone = document.getElementById('signup-phone').value;
-        const password = document.getElementById('signup-pass').value;
-        const confirmPassword = document.getElementById('signup-confirm').value;
-        const phoneWithCode = countryCode + phone;
+    
+    signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-        let hasErrors = false;
+    const username = document.getElementById('signup-username').value.trim();
+    const email = document.getElementById('signup-email').value.trim().toLowerCase();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('signup-confirm-password').value;
+    const phoneWithCode = formatPhoneWithCountryCode(phone);
 
-        if (!username) {
-            displayMessage('signup-user-error', 'Username is required.', true);
-            hasErrors = true;
-        } else if (await checkUsernameExists(username)) {
-            displayMessage('signup-user-error', 'Username already exists.', true);
-            hasErrors = true;
-        }
+    // Basic validation
+    if (!username || !email || !phoneWithCode || !password || !confirmPassword) {
+        displayMessage('signup-msg', 'All fields are required.', true);
+        return;
+    }
 
-        if (!email) {
-            displayMessage('signup-email-error', 'Email is required.', true);
-            hasErrors = true;
-        } else if (await checkEmailExists(email)) {
-            displayMessage('signup-email-error', 'Email already exists.', true);
-            hasErrors = true;
-        }
+    if (password !== confirmPassword) {
+        displayMessage('signup-msg', 'Passwords do not match.', true);
+        return;
+    }
 
-        if (!phone) {
-            displayMessage('signup-phone-error', 'Phone number is required.', true);
-            hasErrors = true;
-        } else {
-            const existingAccountByPhone = await checkPhoneExists(phoneWithCode);
-            if (existingAccountByPhone) {
-                displayMessage('signup-phone-error', 'Phone number already registered with this country code.', true);
-                hasErrors = true;
-            }
-        }
+    const checkDuplicate = async (field, value) => {
+        return new Promise((resolve) => {
+            accountsNode.get(field).get(value).once((data) => {
+                resolve(data !== null);
+            });
+        });
+    };
 
-        if (!password) {
-            displayMessage('signup-pass-error', 'Password is required.', true);
-            hasErrors = true;
-        } else if (password.length < 6) {
-            displayMessage('signup-pass-error', 'Password must be at least 6 characters.', true);
-            hasErrors = true;
-        }
+    const usernameExists = await checkDuplicate('usernames', username);
+    const emailExists = await checkDuplicate('emails', email);
+    const phoneExists = await checkDuplicate('phones', phoneWithCode);
 
-        if (password !== confirmPassword) {
-            displayMessage('signup-confirm-error', 'Passwords do not match.', true);
-            hasErrors = true;
-        }
+    if (usernameExists) {
+        displayMessage('signup-msg', 'Username already exists.', true);
+        return;
+    }
+    if (emailExists) {
+        displayMessage('signup-msg', 'Email already in use.', true);
+        return;
+    }
+    if (phoneExists) {
+        displayMessage('signup-msg', 'Phone number already registered.', true);
+        return;
+    }
 
-        if (hasErrors) {
+    gun.user().create(username, password, async (ack) => {
+        if (ack.err) {
+            displayMessage('signup-msg', `Signup failed: ${ack.err}`, true);
+            console.error("Signup error:", ack.err);
             return;
         }
 
-        const user = gun.user();
-        user.create(username, password, async (ack) => {
-            if (ack.err) {
-                displayMessage('signup-msg', ack.err, true);
-                console.error("Signup Error:", ack.err); // Log error for debugging
+        const accountId = ack.pub;
+        const timestamp = generateTimestamp();
+
+        const accountInfo = {
+            id: accountId,
+            username,
+            email,
+            phone: phoneWithCode,
+            created_at: timestamp
+        };
+
+        accountsNode.get('usernames').get(username).put(accountId);
+        accountsNode.get('emails').get(email).put(accountId);
+        accountsNode.get('phones').get(phoneWithCode).put(accountId);
+        gun.user(accountId).get('info').put(accountInfo);
+
+        displayMessage('signup-msg', 'Account created successfully!');
+
+        user.auth(username, password, async (authAck) => {
+            if (!authAck.err) {
+                try {
+                    const secret = await SEA.secret(authAck.sea.alias, authAck.sea.pair);
+                    const encryptedAuth = await SEA.encrypt(authAck, secret);
+
+                    localStorage.setItem('imacx_alias', authAck.sea.alias);
+                    localStorage.setItem('imacx_auth', encryptedAuth);
+                    localStorage.setItem('imacx_pair', JSON.stringify(authAck.sea.pair));
+
+                    setLoggedInStatus(authAck.sea.pub);
+                    displayMessage('login-msg', 'Login successful after signup!');
+                    console.log("Logged in after signup:", authAck);
+                } catch (err) {
+                    displayMessage('login-msg', 'Error saving session.', true);
+                    console.error("Session save error:", err);
+                }
             } else {
-                const accountId = ack.pub;
-                const timestamp = generateTimestamp();
-                const accountInfo = {
-                    id: accountId,
-                    username: username,
-                    email: email,
-                    phone: phoneWithCode,
-                    created_at: timestamp
-                };
-
-                accountsNode.get('usernames').get(username).put(accountId, (putAck) => console.log("Username stored:", putAck));
-                accountsNode.get('emails').get(email).put(accountId, (putAck) => console.log("Email stored:", putAck));
-                accountsNode.get('phones').get(phoneWithCode).put(accountId, (putAck) => console.log("Phone stored:", putAck));
-                gun.user(accountId).get('info').put(accountInfo, (putAck) => console.log("Account info stored:", putAck));
-
-                displayMessage('signup-msg', 'Account created successfully!'); // Show success message
-
-                // Optionally log in the user immediately after signup
-                user.auth(username, password, async (authAck) => {
-                    if (!authAck.err) {
-                        localStorage.setItem('imacx_alias', authAck.sea.alias);
-                        localStorage.setItem('imacx_auth', await SEA.encrypt(authAck, await SEA.secret(authAck.sea.alias, authAck.sea.pair)));
-                        localStorage.setItem('imacx_pair', JSON.stringify(authAck.sea.pair));
-                        setLoggedInStatus(authAck.sea.pub);
-                        displayMessage('login-msg', 'Login successful after signup!');
-                        console.log("Login after signup successful:", authAck);
-                    } else {
-                        console.warn("Error logging in after signup:", authAck.err);
-                    }
-                });
+                displayMessage('login-msg', `Auto-login failed: ${authAck.err}`, true);
+                console.warn("Auto-login error:", authAck.err);
             }
         });
     });
+});
+
+        
 
     // Recover Password
     document.getElementById('recover-pass-btn').addEventListener('click', async () => {
