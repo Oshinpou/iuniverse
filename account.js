@@ -235,102 +235,63 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMessage('status-info', 'Logged out.');
     });
 
-    
-    signupForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+   
+    const gun = Gun();
+    const users = gun.get('imacx-users');
 
-    const username = document.getElementById('signup-username').value.trim();
-    const email = document.getElementById('signup-email').value.trim().toLowerCase();
-    const phone = document.getElementById('signup-phone').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const confirmPassword = document.getElementById('signup-confirm-password').value;
-    const phoneWithCode = formatPhoneWithCountryCode(phone);
+    document.getElementById("signup-btn").addEventListener("click", async () => {
+        const username = document.getElementById("signup-user").value.trim();
+        const email = document.getElementById("signup-email").value.trim();
+        const phone = document.getElementById("signup-phone").value.trim();
+        const countryCode = document.getElementById("signup-country-code").value;
+        const password = document.getElementById("signup-pass").value;
+        const confirm = document.getElementById("signup-confirm").value;
 
-    // Basic validation
-    if (!username || !email || !phoneWithCode || !password || !confirmPassword) {
-        displayMessage('signup-msg', 'All fields are required.', true);
-        return;
-    }
+        // Clear error messages
+        document.getElementById("signup-user-error").textContent = "";
+        document.getElementById("signup-email-error").textContent = "";
+        document.getElementById("signup-phone-error").textContent = "";
+        document.getElementById("signup-pass-error").textContent = "";
+        document.getElementById("signup-confirm-error").textContent = "";
 
-    if (password !== confirmPassword) {
-        displayMessage('signup-msg', 'Passwords do not match.', true);
-        return;
-    }
+        // Validation
+        if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
+        if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
+        if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
+        if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password must be at least 6 characters";
+        if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
 
-    const checkDuplicate = async (field, value) => {
-        return new Promise((resolve) => {
-            accountsNode.get(field).get(value).once((data) => {
-                resolve(data !== null);
-            });
-        });
-    };
+        const fullPhone = `${countryCode}${phone}`;
+        const fullID = `imacx-user-${username}`;
 
-    const usernameExists = await checkDuplicate('usernames', username);
-    const emailExists = await checkDuplicate('emails', email);
-    const phoneExists = await checkDuplicate('phones', phoneWithCode);
-
-    if (usernameExists) {
-        displayMessage('signup-msg', 'Username already exists.', true);
-        return;
-    }
-    if (emailExists) {
-        displayMessage('signup-msg', 'Email already in use.', true);
-        return;
-    }
-    if (phoneExists) {
-        displayMessage('signup-msg', 'Phone number already registered.', true);
-        return;
-    }
-
-    gun.user().create(username, password, async (ack) => {
-        if (ack.err) {
-            displayMessage('signup-msg', `Signup failed: ${ack.err}`, true);
-            console.error("Signup error:", ack.err);
-            return;
-        }
-
-        const accountId = ack.pub;
-        const timestamp = generateTimestamp();
-
-        const accountInfo = {
-            id: accountId,
-            username,
-            email,
-            phone: phoneWithCode,
-            created_at: timestamp
-        };
-
-        accountsNode.get('usernames').get(username).put(accountId);
-        accountsNode.get('emails').get(email).put(accountId);
-        accountsNode.get('phones').get(phoneWithCode).put(accountId);
-        gun.user(accountId).get('info').put(accountInfo);
-
-        displayMessage('signup-msg', 'Account created successfully!');
-
-        user.auth(username, password, async (authAck) => {
-            if (!authAck.err) {
-                try {
-                    const secret = await SEA.secret(authAck.sea.alias, authAck.sea.pair);
-                    const encryptedAuth = await SEA.encrypt(authAck, secret);
-
-                    localStorage.setItem('imacx_alias', authAck.sea.alias);
-                    localStorage.setItem('imacx_auth', encryptedAuth);
-                    localStorage.setItem('imacx_pair', JSON.stringify(authAck.sea.pair));
-
-                    setLoggedInStatus(authAck.sea.pub);
-                    displayMessage('login-msg', 'Login successful after signup!');
-                    console.log("Logged in after signup:", authAck);
-                } catch (err) {
-                    displayMessage('login-msg', 'Error saving session.', true);
-                    console.error("Session save error:", err);
-                }
+        // Check if user exists
+        users.get(fullID).once((data) => {
+            if (data) {
+                document.getElementById("signup-user-error").textContent = "Username already exists";
             } else {
-                displayMessage('login-msg', `Auto-login failed: ${authAck.err}`, true);
-                console.warn("Auto-login error:", authAck.err);
+                // Securely create user using GUN SEA
+                Gun.SEA.pair().then(async pair => {
+                    const encryptedPass = await Gun.SEA.encrypt(password, pair);
+                    const userData = {
+                        username,
+                        email,
+                        phone: fullPhone,
+                        pub: pair.pub,
+                        alias: username,
+                        password: encryptedPass
+                    };
+                    users.get(fullID).put(userData, (ack) => {
+                        if (ack.err) {
+                            document.getElementById("signup-msg").textContent = "Error signing up. Try again.";
+                        } else {
+                            document.getElementById("signup-msg").textContent = "Signup successful!";
+                        }
+                    });
+                });
             }
         });
     });
-});
+
 
         
 
