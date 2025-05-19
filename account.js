@@ -1,259 +1,419 @@
 // account.js
 
-// Initialize GUN with a peer relay
-const gun = Gun({
-  peers: ['https://gun-manhattan.herokuapp.com/gun']
-});
-const user = gun.user();
+// Initialize Gun with a public relay
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+const SEA = Gun.SEA;
+const accountsNode = gun.get('imacx-accounts');
 
-// Utility function to display messages
-function showMessage(message, type = 'info') {
-  Toastify({
-    text: message,
-    duration: 3000,
-    gravity: 'top',
-    position: 'right',
-    backgroundColor: type === 'error' ? '#ff4d4d' : '#4CAF50',
-  }).showToast();
+// --- Utility Functions ---
+
+function generateTimestamp() {
+    return moment().tz('Asia/Kolkata').format();
 }
 
-// Utility function to validate email
-function isValidEmail(email) {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-}
-
-// Utility function to validate phone number
-function isValidPhone(phone) {
-  const re = /^[0-9]{7,15}$/;
-  return re.test(phone);
-}
-
-// Utility function to validate password
-function isValidPassword(password) {
-  return password.length >= 6;
-}
-
-// Sign Up Functionality
-$('#signup-btn').click(async () => {
-  const username = $('#signup-user').val().trim();
-  const email = $('#signup-email').val().trim();
-  const countryCode = $('#signup-country-code').val();
-  const phone = $('#signup-phone').val().trim();
-  const password = $('#signup-pass').val();
-  const confirmPassword = $('#signup-confirm').val();
-
-  // Clear previous error messages
-  $('.error-message').text('');
-
-  // Input validations
-  if (!username) {
-    $('#signup-user-error').text('Username is required.');
-    return;
-  }
-  if (!isValidEmail(email)) {
-    $('#signup-email-error').text('Invalid email format.');
-    return;
-  }
-  if (!isValidPhone(phone)) {
-    $('#signup-phone-error').text('Invalid phone number.');
-    return;
-  }
-  if (!isValidPassword(password)) {
-    $('#signup-pass-error').text('Password must be at least 6 characters.');
-    return;
-  }
-  if (password !== confirmPassword) {
-    $('#signup-confirm-error').text('Passwords do not match.');
-    return;
-  }
-
-  try {
-    // Check if username already exists
-    const existingUser = await gun.get('users').get(username).once();
-    if (existingUser) {
-      $('#signup-user-error').text('Username already taken.');
-      return;
+function displayMessage(elementId, message, isError = false) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = message;
+        element.className = isError ? 'text-red-500' : 'text-green-500';
+    } else {
+        console.error(`Element with ID '${elementId}' not found.`);
     }
+}
 
-    // Create user
-    await user.create(username, password);
+function clearErrors() {
+    const errorElements = document.querySelectorAll('.error-message');
+    errorElements.forEach(element => element.textContent = '');
+    displayMessage('login-msg', '');
+    displayMessage('signup-msg', '');
+    displayMessage('recover-msg', '');
+    displayMessage('recover-username-msg', '');
+}
 
-    // Authenticate user
-    await user.auth(username, password);
-
-    // Store additional user details
-    const fullPhone = `${countryCode}${phone}`;
-    const timestamp = new Date().toISOString();
-    user.get('profile').put({ email, phone: fullPhone, createdAt: timestamp });
-
-    // Store username reference
-    gun.get('users').get(username).put(user.is.pub);
-
-    showMessage('Sign-up successful!', 'success');
-    $('#signup-msg').text('Sign-up successful!');
-    updateStatus();
-  } catch (error) {
-    console.error('Sign-up error:', error);
-    showMessage('Sign-up failed. Please try again.', 'error');
-  }
-});
-
-// Login Functionality
-$('#login-btn').click(async () => {
-  const username = $('#login-user').val().trim();
-  const password = $('#login-pass').val();
-
-  if (!username || !password) {
-    $('#login-msg').text('Please enter both username and password.');
-    return;
-  }
-
-  try {
-    await user.auth(username, password);
-    showMessage('Login successful!', 'success');
-    $('#login-msg').text('');
-    updateStatus();
-  } catch (error) {
-    console.error('Login error:', error);
-    $('#login-msg').text('Invalid credentials.');
-    showMessage('Login failed. Invalid credentials.', 'error');
-  }
-});
-
-// Logout Functionality
-$('#logout-btn').click(() => {
-  user.leave();
-  showMessage('Logged out successfully.', 'success');
-  updateStatus();
-});
-
-// Password Recovery Functionality
-$('#recover-pass-btn').click(async () => {
-  const username = $('#recover-user').val().trim();
-  const email = $('#recover-email').val().trim();
-  const countryCode = $('#recover-country-code').val();
-  const phone = $('#recover-phone').val().trim();
-
-  // Clear previous error messages
-  $('.error-message').text('');
-
-  if (!username) {
-    $('#recover-user-error').text('Username is required.');
-    return;
-  }
-  if (!isValidEmail(email)) {
-    $('#recover-email-error').text('Invalid email format.');
-    return;
-  }
-  if (!isValidPhone(phone)) {
-    $('#recover-phone-error').text('Invalid phone number.');
-    return;
-  }
-
-  try {
-    const userPub = await gun.get('users').get(username).once();
-    if (!userPub) {
-      $('#recover-msg').text('User not found.');
-      return;
-    }
-
-    const tempUser = gun.user();
-    tempUser.auth(username, null, async (ack) => {
-      if (ack.err) {
-        $('#recover-msg').text('Authentication failed.');
-        return;
-      }
-
-      const profile = await tempUser.get('profile').once();
-      const storedEmail = profile.email;
-      const storedPhone = profile.phone;
-
-      const inputPhone = `${countryCode}${phone}`;
-
-      if (storedEmail === email && storedPhone === inputPhone) {
-        $('#recover-msg').text('Verification successful. Please reset your password.');
-        // Implement password reset logic here
-      } else {
-        $('#recover-msg').text('Verification failed. Details do not match.');
-      }
-    });
-  } catch (error) {
-    console.error('Password recovery error:', error);
-    $('#recover-msg').text('An error occurred during recovery.');
-  }
-});
-
-// Username Recovery Functionality
-$('#recover-username-btn').click(async () => {
-  const email = $('#username-recovery-email').val().trim();
-  const countryCode = $('#username-country-code').val();
-  const phone = $('#username-phone').val().trim();
-  const password = $('#username-recovery-pass').val();
-
-  // Clear previous error messages
-  $('.error-message').text('');
-
-  if (!isValidEmail(email)) {
-    $('#username-recovery-email-error').text('Invalid email format.');
-    return;
-  }
-  if (!isValidPhone(phone)) {
-    $('#username-phone-error').text('Invalid phone number.');
-    return;
-  }
-  if (!isValidPassword(password)) {
-    $('#username-recovery-pass-error').text('Password must be at least 6 characters.');
-    return;
-  }
-
-  try {
-    gun.get('users').map().once(async (pub, username) => {
-      const tempUser = gun.user();
-      tempUser.auth(username, password, async (ack) => {
-        if (ack.err) return;
-
-        const profile = await tempUser.get('profile').once();
-        const storedEmail = profile.email;
-        const storedPhone = profile.phone;
-
-        const inputPhone = `${countryCode}${phone}`;
-
-        if (storedEmail === email && storedPhone === inputPhone) {
-          $('#username-msg').text(`Your username is: ${username}`);
+async function getLoggedInAccountId() {
+    const alias = localStorage.getItem('imacx_alias');
+    if (alias) {
+        try {
+            const auth = await SEA.decrypt(localStorage.getItem('imacx_auth'), await SEA.secret(alias, localStorage.getItem('imacx_pair')));
+            return auth ? auth.sea.pub : null;
+        } catch (e) {
+            console.error("Error decrypting auth:", e);
+            return null;
         }
-      });
-    });
-  } catch (error) {
-    console.error('Username recovery error:', error);
-    $('#username-msg').text('An error occurred during recovery.');
-  }
-});
-
-// Update Account Status
-function updateStatus() {
-  if (user.is) {
-    const username = user.is.alias;
-    const pub = user.is.pub;
-    const timestamp = new Date().toISOString();
-    const address = pub;
-
-    $('#status-info').html(`
-      <p><strong>Logged in as:</strong> ${username}</p>
-      <p><strong>Public Key:</strong> ${address}</p>
-      <p><strong>Login Time:</strong> ${timestamp}</p>
-    `);
-  } else {
-    $('#status-info').html('<p>You are not logged in.</p>');
-  }
+    }
+    return null;
 }
 
-// Maintain Session Across Pages
-user.recall({ sessionStorage: true }, () => {
-  updateStatus();
+async function storeAccountData(accountId, data) {
+    const userNode = gun.user(accountId);
+    userNode.get('data').put(data);
+    console.log(`Data stored for account: ${accountId}`, data);
+}
+
+async function getAccountData(accountId, callback) {
+    const userNode = gun.user(accountId);
+    userNode.get('data').on(callback);
+}
+
+async function checkUsernameExists(username) {
+    return new Promise(resolve => {
+        accountsNode.get('usernames').get(username).once(data => {
+            resolve(!!data);
+        });
+    });
+}
+
+async function checkEmailExists(email) {
+    return new Promise(resolve => {
+        accountsNode.get('emails').get(email).once(data => {
+            resolve(!!data);
+        });
+    });
+}
+
+async function checkPhoneExists(phoneWithCode) {
+    return new Promise(resolve => {
+        accountsNode.get('phones').get(phoneWithCode).once(data => {
+            resolve(!!data);
+        });
+    });
+}
+
+async function getAccountByUsername(username) {
+    return new Promise(resolve => {
+        accountsNode.get('usernames').get(username).once(alias => {
+            if (alias) {
+                gun.user(alias).once(user => resolve(user));
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+async function getAccountByEmail(email) {
+    return new Promise(resolve => {
+        accountsNode.get('emails').get(email).once(alias => {
+            if (alias) {
+                gun.user(alias).once(user => resolve(user));
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+async function getAccountByPhone(phoneWithCode) {
+    return new Promise(resolve => {
+        accountsNode.get('phones').get(phoneWithCode).once(alias => {
+            if (alias) {
+                gun.user(alias).once(user => resolve(user));
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+async function setLoggedInStatus(accountId) {
+    localStorage.setItem('imacx_logged_in', 'true');
+    localStorage.setItem('imacx_current_account', accountId);
+    updateAccountStatus();
+}
+
+function setLoggedOutStatus() {
+    localStorage.removeItem('imacx_logged_in');
+    localStorage.removeItem('imacx_current_account');
+    localStorage.removeItem('imacx_alias');
+    localStorage.removeItem('imacx_auth');
+    localStorage.removeItem('imacx_pair');
+    updateAccountStatus();
+}
+
+function updateAccountStatus() {
+    const statusInfo = document.getElementById('status-info');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loggedInAccountId = localStorage.getItem('imacx_current_account');
+
+    if (loggedInAccountId) {
+        statusInfo.textContent = `Logged in as: ${loggedInAccountId}`;
+        logoutBtn.style.display = 'block';
+    } else {
+        statusInfo.textContent = 'Not logged in.';
+        logoutBtn.style.display = 'none';
+    }
+}
+
+async function continuousLogin() {
+    const alias = localStorage.getItem('imacx_alias');
+    const auth = localStorage.getItem('imacx_auth');
+    const pair = localStorage.getItem('imacx_pair');
+
+    if (alias && auth && pair) {
+        try {
+            const decryptedAuth = await SEA.decrypt(auth, await SEA.secret(alias, pair));
+            if (decryptedAuth && decryptedAuth.sea && decryptedAuth.sea.pub) {
+                setLoggedInStatus(decryptedAuth.sea.pub);
+            } else {
+                setLoggedOutStatus();
+            }
+        } catch (e) {
+            console.error("Continuous login error:", e);
+            setLoggedOutStatus();
+        }
+    } else {
+        setLoggedOutStatus();
+    }
+}
+
+// --- Event Listeners ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    continuousLogin();
+    updateAccountStatus();
+
+    // Login
+    document.getElementById('login-btn').addEventListener('click', async () => {
+        clearErrors();
+        const username = document.getElementById('login-user').value;
+        const password = document.getElementById('login-pass').value;
+
+        if (!username || !password) {
+            displayMessage('login-msg', 'Please enter both username and password.', true);
+            return;
+        }
+
+        const user = gun.user();
+        user.auth(username, password, async (ack) => {
+            if (ack.err) {
+                displayMessage('login-msg', ack.err, true);
+            } else {
+                localStorage.setItem('imacx_alias', ack.sea.alias);
+                localStorage.setItem('imacx_auth', await SEA.encrypt(ack, await SEA.secret(ack.sea.alias, ack.sea.pair)));
+                localStorage.setItem('imacx_pair', JSON.stringify(ack.sea.pair));
+                setLoggedInStatus(ack.sea.pub);
+                displayMessage('login-msg', 'Login successful!');
+            }
+        });
+    });
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        gun.user().logout();
+        setLoggedOutStatus();
+        displayMessage('status-info', 'Logged out.');
+    });
+
+    // Sign Up
+    document.getElementById('signup-btn').addEventListener('click', async () => {
+        clearErrors();
+        const username = document.getElementById('signup-user').value;
+        const email = document.getElementById('signup-email').value;
+        const countryCode = document.getElementById('signup-country-code').value;
+        const phone = document.getElementById('signup-phone').value;
+        const password = document.getElementById('signup-pass').value;
+        const confirmPassword = document.getElementById('signup-confirm').value;
+        const phoneWithCode = countryCode + phone;
+
+        let hasErrors = false;
+
+        if (!username) {
+            displayMessage('signup-user-error', 'Username is required.', true);
+            hasErrors = true;
+        } else if (await checkUsernameExists(username)) {
+            displayMessage('signup-user-error', 'Username already exists.', true);
+            hasErrors = true;
+        }
+
+        if (!email) {
+            displayMessage('signup-email-error', 'Email is required.', true);
+            hasErrors = true;
+        } else if (await checkEmailExists(email)) {
+            displayMessage('signup-email-error', 'Email already exists.', true);
+            hasErrors = true;
+        }
+
+        if (!phone) {
+            displayMessage('signup-phone-error', 'Phone number is required.', true);
+            hasErrors = true;
+        } else {
+            const existingAccountByPhone = await getAccountByPhone(phoneWithCode);
+            if (existingAccountByPhone) {
+                displayMessage('signup-phone-error', 'Phone number already registered with this country code.', true);
+                hasErrors = true;
+            }
+        }
+
+        if (!password) {
+            displayMessage('signup-pass-error', 'Password is required.', true);
+            hasErrors = true;
+        } else if (password.length < 6) {
+            displayMessage('signup-pass-error', 'Password must be at least 6 characters.', true);
+            hasErrors = true;
+        }
+
+        if (password !== confirmPassword) {
+            displayMessage('signup-confirm-error', 'Passwords do not match.', true);
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            return;
+        }
+
+        const user = gun.user();
+        user.create(username, password, async (ack) => {
+            if (ack.err) {
+                displayMessage('signup-msg', ack.err, true);
+            } else {
+                const accountId = ack.pub;
+                const timestamp = generateTimestamp();
+                const accountInfo = {
+                    id: accountId,
+                    username: username,
+                    email: email,
+                    phone: phoneWithCode,
+                    created_at: timestamp
+                };
+
+                accountsNode.get('usernames').get(username).put(accountId);
+                accountsNode.get('emails').get(email).put(accountId);
+                accountsNode.get('phones').get(phoneWithCode).put(accountId);
+
+                await storeAccountData(accountId, { info: accountInfo, data: {} }); // Initial data structure
+
+                displayMessage('signup-msg', 'Account created successfully! You can now log in.');
+                // Optionally log in the user immediately after signup
+                user.auth(username, password, async (authAck) => {
+                    if (!authAck.err) {
+                        localStorage.setItem('imacx_alias', authAck.sea.alias);
+                        localStorage.setItem('imacx_auth', await SEA.encrypt(authAck, await SEA.secret(authAck.sea.alias, authAck.sea.pair)));
+                        localStorage.setItem('imacx_pair', JSON.stringify(authAck.sea.pair));
+                        setLoggedInStatus(authAck.sea.pub);
+                        displayMessage('login-msg', 'Login successful after signup!');
+                    } else {
+                        console.warn("Error logging in after signup:", authAck.err);
+                    }
+                });
+            }
+        });
+    });
+
+    // Recover Password (Basic implementation - needs backend integration for actual reset)
+    document.getElementById('recover-pass-btn').addEventListener('click', async () => {
+        clearErrors();
+        const username = document.getElementById('recover-user').value;
+        const email = document.getElementById('recover-email').value;
+        const countryCode = document.getElementById('recover-country-code').value;
+        const phone = document.getElementById('recover-phone').value;
+        const phoneWithCode = countryCode + phone;
+
+        if (!username && !email && !phone) {
+            displayMessage('recover-msg', 'Please provide at least one of username, email, or phone number.', true);
+            return;
+        }
+
+        // In a real scenario, you would send a password reset link/code to the user's email or phone.
+        // This is a client-side simulation.
+        let foundAccount = null;
+        if (username) foundAccount = await getAccountByUsername(username);
+        if (!foundAccount && email) foundAccount = await getAccountByEmail(email);
+        if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
+
+        if (foundAccount) {
+            displayMessage('recover-msg', 'Password recovery initiated. Please check your email/phone (simulation).');
+            // In a real app, trigger a backend function to send a reset link/code.
+        } else {
+            displayMessage('recover-msg', 'No account found matching the provided information.', true);
+        }
+    });
+
+    // Recover Username (Basic implementation - needs backend integration for actual retrieval)
+    document.getElementById('recover-username-btn').addEventListener('click', async () => {
+        clearErrors();
+        const email = document.getElementById('username-recovery-email').value;
+        const countryCode = document.getElementById('username-country-code').value;
+        const phone = document.getElementById('username-phone').value;
+        const password = document.getElementById('username-recovery-pass').value;
+        const phoneWithCode = countryCode + phone;
+
+        if (!email && !phone) {
+            displayMessage('recover-username-msg', 'Please provide either email or phone number.', true);
+            return;
+        }
+        if (!password) {
+            displayMessage('username-recovery-pass-error', 'Password is required.', true);
+            return;
+        }
+
+        // In a real scenario, you would verify the password and then send the username to the email/phone.
+        // This is a client-side simulation.
+        let foundAccount = null;
+        if (email) foundAccount = await getAccountByEmail(email);
+        if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
+
+        if (foundAccount) {
+            // Simulate password verification (in real app, compare hash)
+            const userNode = gun.user(foundAccount.info.id);
+            userNode.auth(foundAccount.info.username, password, ack => {
+                if (!ack.err) {
+                    displayMessage('recover-username-msg', `Your username is: ${foundAccount.info.username}`);
+                    // In a real app, you might also send this to the user's email/phone.
+                } else {
+                    displayMessage('recover-username-msg', 'Incorrect password.', true);
+                }
+            });
+        } else {
+            displayMessage('recover-username-msg', 'No account found matching the provided information.', true);
+        }
+    });
 });
 
-// Initialize Status on Page Load
-$(document).ready(() => {
-  updateStatus();
+// --- Cross-page Connect/Disconnect and Login Status ---
+
+// Listen for custom events to handle cross-page communication
+window.addEventListener('imacx_login', (event) => {
+    if (event.detail && event.detail.accountId) {
+        setLoggedInStatus(event.detail.accountId);
+    }
 });
+
+window.addEventListener('imacx_logout', () => {
+    setLoggedOutStatus();
+});
+
+// Periodically check login status (can be optimized with BroadcastChannel API if wider browser support is needed)
+setInterval(updateAccountStatus, 1000);
+
+// --- Global Distributed Storage and Account Data ---
+
+// Example of storing and retrieving user-specific data
+async function saveUserData(key, value) {
+    const loggedInAccountId = await getLoggedInAccountId();
+    if (loggedInAccountId) {
+        const dataToStore = {};
+        dataToStore[key] = value;
+        await storeAccountData(loggedInAccountId, dataToStore);
+    } else {
+        console.warn("Not logged in, cannot save data.");
+    }
+}
+
+async function loadUserData(key, callback) {
+    const loggedInAccountId = await getLoggedInAccountId();
+    if (loggedInAccountId) {
+        getAccountData(loggedInAccountId, (accountData) => {
+            if (accountData && accountData.data && accountData.data[key]) {
+                callback(accountData.data[key]);
+            } else {
+                callback(null); // Or handle no data case
+            }
+        });
+    } else {
+        console.warn("Not logged in, cannot load data.");
+    }
+}
+
+// Example usage:
+// document.getElementById('save-button').addEventListener('click', () => saveUserData('mySetting', 'someValue'));
+// loadUserData('mySetting', (value) => console.log('My setting:', value));
