@@ -236,82 +236,81 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-const gun = Gun();
-const users = gun.get('imacx-accounts');
 
-// Check if email or phone exists
-function checkIfEmailOrPhoneExists(email, fullPhone, callback) {
-    let isUsed = false;
+    const gun = Gun();
+    const users = gun.get('imacx-accounts');
 
-    users.map().once((data) => {
-        if (data) {
-            const storedEmail = data.email?.toLowerCase();
-            const storedPhone = data.phone;
+    // Function to check if email or phone already exists
+    function checkIfEmailOrPhoneExists(email, fullPhone, callback) {
+        let found = false;
 
-            if (storedEmail === email || storedPhone === fullPhone) {
-                isUsed = true;
-                callback(true);
-            }
-        }
-    });
-
-    // Wait briefly to collect map results
-    setTimeout(() => {
-        callback(isUsed);
-    }, 1000);
-}
-
-document.getElementById("signup-btn").addEventListener("click", async () => {
-    const username = document.getElementById("signup-user").value.trim();
-    const email = document.getElementById("signup-email").value.trim().toLowerCase();
-    const phone = document.getElementById("signup-phone").value.trim();
-    const countryCode = document.getElementById("signup-country-code").value;
-    const password = document.getElementById("signup-pass").value;
-    const confirm = document.getElementById("signup-confirm").value;
-
-    // Clear previous errors
-    document.getElementById("signup-user-error").textContent = "";
-    document.getElementById("signup-email-error").textContent = "";
-    document.getElementById("signup-phone-error").textContent = "";
-    document.getElementById("signup-pass-error").textContent = "";
-    document.getElementById("signup-confirm-error").textContent = "";
-    document.getElementById("signup-msg").textContent = "";
-
-    // Basic validation
-    if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
-    if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
-    if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
-    if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password too short";
-    if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
-
-    const fullPhone = `${countryCode}${phone}`;
-    const userId = `imacx-user-${username}`;
-
-    // Check for duplicate email or phone
-    checkIfEmailOrPhoneExists(email, fullPhone, (isUsed) => {
-        if (isUsed) {
-            document.getElementById("signup-msg").textContent = "This email or phone number is already in use.";
-            return;
-        }
-
-        // Check if username is taken
-        users.get(userId).once((data) => {
+        users.map().once((data) => {
             if (data) {
-                document.getElementById("signup-user-error").textContent = "Username already exists";
-            } else {
-                // Proceed with creating user
+                const storedEmail = (data.email || "").toLowerCase();
+                const storedPhone = data.phone || "";
+
+                if (storedEmail === email || storedPhone === fullPhone) {
+                    found = true;
+                }
+            }
+        });
+
+        setTimeout(() => callback(found), 1500); // wait briefly to collect map results
+    }
+
+    document.getElementById("signup-btn").addEventListener("click", async () => {
+        const username = document.getElementById("signup-user").value.trim();
+        const email = document.getElementById("signup-email").value.trim().toLowerCase();
+        const phone = document.getElementById("signup-phone").value.trim();
+        const countryCode = document.getElementById("signup-country-code").value.trim();
+        const password = document.getElementById("signup-pass").value;
+        const confirm = document.getElementById("signup-confirm").value;
+
+        // Clear errors
+        document.getElementById("signup-user-error").textContent = "";
+        document.getElementById("signup-email-error").textContent = "";
+        document.getElementById("signup-phone-error").textContent = "";
+        document.getElementById("signup-pass-error").textContent = "";
+        document.getElementById("signup-confirm-error").textContent = "";
+        document.getElementById("signup-msg").textContent = "";
+
+        // Basic validation
+        if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
+        if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
+        if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
+        if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password too short";
+        if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
+
+        const fullPhone = `${countryCode}${phone}`;
+        const userId = `imacx-user-${username}`;
+
+        // Check if email or phone exists
+        checkIfEmailOrPhoneExists(email, fullPhone, (exists) => {
+            if (exists) {
+                document.getElementById("signup-msg").textContent = "Email or phone with same country code already used.";
+                return;
+            }
+
+            // Check if username is already taken
+            users.get(userId).once((existingUser) => {
+                if (existingUser) {
+                    document.getElementById("signup-user-error").textContent = "Username already exists";
+                    return;
+                }
+
+                // Create account securely
                 Gun.SEA.pair().then(async (pair) => {
                     const encryptedPass = await Gun.SEA.encrypt(password, pair);
                     const encryptedConfirm = await Gun.SEA.encrypt(confirm, pair);
-                    const istTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+                    const istDate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
                     const userData = {
-                        username,
-                        email,
+                        username: username,
+                        email: email,
                         phone: fullPhone,
                         password: encryptedPass,
                         confirm: encryptedConfirm,
-                        createdAt: istTime,
+                        createdAt: istDate,
                         pub: pair.pub,
                         alias: username
                     };
@@ -324,12 +323,10 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
                         }
                     });
                 });
-            }
+            });
         });
     });
-});
 
-        
 
     // Recover Password
     document.getElementById('recover-pass-btn').addEventListener('click', async () => {
