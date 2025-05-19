@@ -235,9 +235,31 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMessage('status-info', 'Logged out.');
     });
 
-   
+
 const gun = Gun();
 const users = gun.get('imacx-accounts');
+
+// Check if email or phone number with country code exists
+function checkIfEmailOrPhoneExists(email, fullPhone, callback) {
+    let exists = false;
+
+    users.map().once((data) => {
+        if (data) {
+            const existingEmail = data.email?.toLowerCase();
+            const existingPhone = data.phone;
+
+            if (existingEmail === email || existingPhone === fullPhone) {
+                exists = true;
+                callback(true);
+            }
+        }
+    });
+
+    // Add delay to wait for GUN map read
+    setTimeout(() => {
+        if (!exists) callback(false);
+    }, 1000);
+}
 
 document.getElementById("signup-btn").addEventListener("click", async () => {
     const username = document.getElementById("signup-user").value.trim();
@@ -246,9 +268,6 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
     const countryCode = document.getElementById("signup-country-code").value;
     const password = document.getElementById("signup-pass").value;
     const confirm = document.getElementById("signup-confirm").value;
-
-    const fullPhone = `${countryCode}${phone}`;
-    const fullID = `imacx-user-${username}`;
 
     // Clear error messages
     document.getElementById("signup-user-error").textContent = "";
@@ -265,38 +284,38 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
     if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password must be at least 6 characters";
     if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
 
-    let emailExists = false;
-    let phoneExists = false;
+    const fullPhone = `${countryCode}${phone}`;
+    const fullID = `imacx-user-${username}`;
 
-    users.map().once((data) => {
-        if (data) {
-            if ((data.email || "").toLowerCase() === email) emailExists = true;
-            if ((data.phone || "") === fullPhone) phoneExists = true;
-        }
-    });
-
-    setTimeout(() => {
-        if (emailExists && phoneExists) {
-            document.getElementById("signup-email-error").textContent = "Same email and phone with this country code already used.";
+    // Step 1: Check if email or phone is already used
+    checkIfEmailOrPhoneExists(email, fullPhone, (exists) => {
+        if (exists) {
+            document.getElementById("signup-email-error").textContent = "Same email or phone number already used.";
             return;
         }
 
-        // Check username
+        // Step 2: Check if username is already taken
         users.get(fullID).once((data) => {
             if (data) {
                 document.getElementById("signup-user-error").textContent = "Username already exists";
             } else {
-                // Create user
+                // Step 3: Encrypt and Store
                 Gun.SEA.pair().then(async pair => {
                     const encryptedPass = await Gun.SEA.encrypt(password, pair);
+                    const encryptedConfirm = await Gun.SEA.encrypt(confirm, pair);
+                    const istTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
                     const userData = {
                         username,
                         email,
                         phone: fullPhone,
+                        password: encryptedPass,
+                        confirm: encryptedConfirm,
+                        createdAt: istTime,
                         pub: pair.pub,
-                        alias: username,
-                        password: encryptedPass
+                        alias: username
                     };
+
                     users.get(fullID).put(userData, (ack) => {
                         if (ack.err) {
                             document.getElementById("signup-msg").textContent = "Error signing up. Try again.";
@@ -307,8 +326,9 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
                 });
             }
         });
-    }, 800); // Wait 800ms for map() to finish
+    });
 });
+
 
         
 
