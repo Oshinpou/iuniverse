@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displayMessage('signup-phone-error', 'Phone number is required.', true);
             hasErrors = true;
         } else {
-            const existingAccountByPhone = await getAccountByPhone(phoneWithCode);
+            const existingAccountByPhone = await checkPhoneExists(phoneWithCode); // Use checkPhoneExists
             if (existingAccountByPhone) {
                 displayMessage('signup-phone-error', 'Phone number already registered with this country code.', true);
                 hasErrors = true;
@@ -310,8 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 accountsNode.get('usernames').get(username).put(accountId);
                 accountsNode.get('emails').get(email).put(accountId);
                 accountsNode.get('phones').get(phoneWithCode).put(accountId);
-
-                await storeAccountData(accountId, { info: accountInfo, data: {} }); // Initial data structure
+                gun.user(accountId).get('info').put(accountInfo); // Store account info
 
                 displayMessage('signup-msg', 'Account created successfully!');
                 // Optionally log in the user immediately after signup
@@ -349,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!foundAccount && email) foundAccount = await getAccountByEmail(email);
         if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
 
-        if (foundAccount && foundAccount.info) {
+        if (foundAccount) {
             displayMessage('recover-msg', 'Password recovery initiated. Please check your email/phone (simulation).');
             // In a real app, you would now trigger a backend function to send a reset link/code
             // based on the user's verified email or phone number.
@@ -376,16 +375,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let foundAccount = null;
-        if (email) foundAccount = await getAccountByEmail(email);
-        if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
+        let foundAccountInfo = null;
+        if (email) {
+            const account = await getAccountByEmail(email);
+            if (account && account.info) foundAccountInfo = account.info;
+        }
+        if (!foundAccountInfo && phone) {
+            const account = await getAccountByPhone(phoneWithCode);
+            if (account && account.info) foundAccountInfo = account.info;
+        }
 
-        if (foundAccount && foundAccount.info) {
+        if (foundAccountInfo) {
             // Basic password check (not secure for real-world, should use hashed passwords)
-            const user = gun.user(foundAccount.info.id);
-            user.auth(foundAccount.info.username, password, ack => {
+            const user = gun.user(foundAccountInfo.id);
+            user.auth(foundAccountInfo.username, password, ack => {
                 if (!ack.err) {
-                    displayMessage('recover-username-msg', `Your username is: ${foundAccount.info.username}`);
+                    displayMessage('recover-username-msg', `Your username is: ${foundAccountInfo.username}`);
                     // In a real app, you might also send this to the user's email/phone.
                 } else {
                     displayMessage('recover-username-msg', 'Incorrect password.', true);
