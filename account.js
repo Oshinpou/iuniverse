@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displayMessage('signup-phone-error', 'Phone number is required.', true);
             hasErrors = true;
         } else {
-            const existingAccountByPhone = await checkPhoneExists(phoneWithCode); // Use checkPhoneExists
+            const existingAccountByPhone = await checkPhoneExists(phoneWithCode);
             if (existingAccountByPhone) {
                 displayMessage('signup-phone-error', 'Phone number already registered with this country code.', true);
                 hasErrors = true;
@@ -312,7 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 accountsNode.get('phones').get(phoneWithCode).put(accountId);
                 gun.user(accountId).get('info').put(accountInfo); // Store account info
 
-                displayMessage('signup-msg', 'Account created successfully!');
+                displayMessage('signup-msg', 'Account created successfully!'); // Show success message
+
                 // Optionally log in the user immediately after signup
                 user.auth(username, password, async (authAck) => {
                     if (!authAck.err) {
@@ -378,11 +379,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let foundAccountInfo = null;
         if (email) {
             const account = await getAccountByEmail(email);
-            if (account && account.info) foundAccountInfo = account.info;
+            if (account) foundAccountInfo = await getAccountInfo(account.sea.pub); // Get info using pub key
         }
         if (!foundAccountInfo && phone) {
             const account = await getAccountByPhone(phoneWithCode);
-            if (account && account.info) foundAccountInfo = account.info;
+            if (account) foundAccountInfo = await getAccountInfo(account.sea.pub); // Get info using pub key
         }
 
         if (foundAccountInfo) {
