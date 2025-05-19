@@ -69,30 +69,43 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
             }
 
             // Create account securely
-            SEA.pair().then(async (pair) => {
-                const encryptedPass = await SEA.encrypt(password, pair);
-                const encryptedConfirm = await SEA.encrypt(confirm, pair);
-                const istDate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+SEA.pair().then(async (pair) => {
+    const password = document.getElementById('signup-pass').value;
+    const confirm = document.getElementById('signup-confirm').value;
 
-                const userData = {
-                    username: username,
-                    email: email,
-                    phone: fullPhone,
-                    password: encryptedPass,
-                    confirm: encryptedConfirm,
-                    createdAt: istDate,
-                    pub: pair.pub,
-                    alias: username
-                };
+    if (!password || !confirm) {
+        showMessage('signup-msg', "Password fields cannot be empty.", 'error');
+        return;
+    }
 
-                users.get(userId).put(userData, (ack) => {
-                    if (ack.err) {
-                        showMessage('signup-msg', "Signup failed. Try again.", 'error');
-                    } else {
-                        showMessage('signup-msg', "Signup successful!", 'success');
-                    }
-                });
-            });
+    if (password !== confirm) {
+        showMessage('signup-msg', "Passwords do not match.", 'error');
+        return;
+    }
+
+    const encryptedPass = await SEA.encrypt(password, pair);
+    const encryptedConfirm = await SEA.encrypt(confirm, pair);
+    const istDate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+    const userData = {
+        username: username,
+        email: email,
+        phone: fullPhone,
+        password: encryptedPass,
+        confirm: encryptedConfirm,
+        createdAt: istDate,
+        pub: pair.pub,
+        alias: username
+    };
+
+    gun.get('imacx-accounts').get(userId).put(userData, (ack) => {
+        if (ack.err) {
+            showMessage('signup-msg', "Signup failed. Try again.", 'error');
+        } else {
+            showMessage('signup-msg', "Signup successful!", 'success');
+        }
+    });
+});
         });
     });
 });
