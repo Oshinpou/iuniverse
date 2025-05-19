@@ -292,7 +292,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+document.getElementById("signup-button").addEventListener("click", async function () {
+  const email = document.getElementById("signup-email").value.trim().toLowerCase();
+  const countryCode = document.getElementById("signup-country-code").value;
+  const phone = document.getElementById("signup-phone").value.trim();
+  const fullPhone = countryCode + phone;
 
+  // Clear previous error messages
+  document.getElementById("signup-email-error").textContent = "";
+
+  try {
+    const response = await fetch("/api/check-user-exists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, phone: fullPhone }),
+    });
+
+    const result = await response.json();
+
+    if (response.status === 400) {
+      document.getElementById("signup-email-error").textContent = result.message;
+      return;
+    }
+
+    // Continue to final signup logic (e.g., password validation, actual signup call)
+    continueSignup(email, fullPhone);
+
+  } catch (error) {
+    document.getElementById("signup-email-error").textContent = "Error checking user existence.";
+    console.error(error);
+  }
+});
         
 
     // Recover Password
