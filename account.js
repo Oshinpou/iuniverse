@@ -351,13 +351,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!foundAccount && email) foundAccount = await getAccountByEmail(email);
         if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
 
-        if (foundAccount && foundAccount.sea && foundAccount.sea.pub) {
-            const accountId = foundAccount.sea.pub;
-            // In a real application, you would initiate a password reset process here.
-            // This might involve generating a reset token, storing it securely linked to the accountId,
-            // and sending a reset link to the user's verified email or phone.
-            displayMessage('recover-msg', 'Password recovery initiated (simulation). Check console for account ID.', true);
-            console.log("Password recovery initiated for account ID:", accountId);
+        if (foundAccount) {
+            displayMessage('recover-msg', 'Password recovery initiated. Please check your email/phone (simulation).');
+            // In a real app, you would now trigger a backend function to send a reset link/code
+            // based on the user's verified email or phone number.
+            // For a fully functional example with Gun, you might store a reset token
+            // associated with the user and provide a mechanism to verify it and set a new password.
         } else {
             displayMessage('recover-msg', 'No account found matching the provided information.', true);
         }
@@ -440,4 +439,8 @@ async function loadUserData(key, callback) {
         });
     } else {
         console.warn("Not logged in, cannot load data.");
-        }
+    }
+}
+
+// Example usage:
+// document.getElementById('save-button').addEventListener('click', ()
