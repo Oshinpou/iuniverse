@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
    
 const gun = Gun();
-const users = gun.get('imacx-users');
+const users = gun.get('imacx-accounts');
 
 document.getElementById("signup-btn").addEventListener("click", async () => {
     const username = document.getElementById("signup-user").value.trim();
