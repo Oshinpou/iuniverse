@@ -296,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         user.create(username, password, async (ack) => {
             if (ack.err) {
                 displayMessage('signup-msg', ack.err, true);
+                console.error("Signup Error:", ack.err); // Log error for debugging
             } else {
                 const accountId = ack.pub;
                 const timestamp = generateTimestamp();
@@ -307,10 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     created_at: timestamp
                 };
 
-                accountsNode.get('usernames').get(username).put(accountId);
-                accountsNode.get('emails').get(email).put(accountId);
-                accountsNode.get('phones').get(phoneWithCode).put(accountId);
-                gun.user(accountId).get('info').put(accountInfo); // Store account info
+                accountsNode.get('usernames').get(username).put(accountId, (putAck) => console.log("Username stored:", putAck));
+                accountsNode.get('emails').get(email).put(accountId, (putAck) => console.log("Email stored:", putAck));
+                accountsNode.get('phones').get(phoneWithCode).put(accountId, (putAck) => console.log("Phone stored:", putAck));
+                gun.user(accountId).get('info').put(accountInfo, (putAck) => console.log("Account info stored:", putAck));
 
                 displayMessage('signup-msg', 'Account created successfully!'); // Show success message
 
@@ -322,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('imacx_pair', JSON.stringify(authAck.sea.pair));
                         setLoggedInStatus(authAck.sea.pub);
                         displayMessage('login-msg', 'Login successful after signup!');
+                        console.log("Login after signup successful:", authAck);
                     } else {
                         console.warn("Error logging in after signup:", authAck.err);
                     }
@@ -349,12 +351,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!foundAccount && email) foundAccount = await getAccountByEmail(email);
         if (!foundAccount && phone) foundAccount = await getAccountByPhone(phoneWithCode);
 
-        if (foundAccount) {
-            displayMessage('recover-msg', 'Password recovery initiated. Please check your email/phone (simulation).');
-            // In a real app, you would now trigger a backend function to send a reset link/code
-            // based on the user's verified email or phone number.
-            // For a fully functional example with Gun, you might store a reset token
-            // associated with the user and provide a mechanism to verify it and set a new password.
+        if (foundAccount && foundAccount.sea && foundAccount.sea.pub) {
+            const accountId = foundAccount.sea.pub;
+            // In a real application, you would initiate a password reset process here.
+            // This might involve generating a reset token, storing it securely linked to the accountId,
+            // and sending a reset link to the user's verified email or phone.
+            displayMessage('recover-msg', 'Password recovery initiated (simulation). Check console for account ID.', true);
+            console.log("Password recovery initiated for account ID:", accountId);
         } else {
             displayMessage('recover-msg', 'No account found matching the provided information.', true);
         }
@@ -437,9 +440,4 @@ async function loadUserData(key, callback) {
         });
     } else {
         console.warn("Not logged in, cannot load data.");
-    }
-}
-
-// Example usage:
-// document.getElementById('save-button').addEventListener('click', () => saveUserData('mySetting', 'someValue'));
-// loadUserData('mySetting', (value) => console.log('My setting:', value));
+        }
