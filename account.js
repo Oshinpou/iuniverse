@@ -68,52 +68,65 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
                 return;
             }
 
+            // create account securely
+document.getElementById('signup-btn').addEventListener('click', function() {
+    var password = document.getElementById('signup-pass').value.trim();
+    var confirm = document.getElementById('signup-confirm').value.trim();
 
-    // Create account securely
-    SEA.pair().then(function(pair) {
-        var password = document.getElementById('signup-pass').value.trim();
-        var confirm = document.getElementById('signup-confirm').value.trim();
+    if (!password || !confirm) {
+        showMessage('signup-msg', "Password fields cannot be empty.", 'error');
+        return;
+    }
 
-        if (!password || !confirm) {
-            showMessage('signup-msg', "Password fields cannot be empty.", 'error');
-            return;
-        }
+    if (password !== confirm) {
+        showMessage('signup-msg', "Passwords do not match.", 'error');
+        return;
+    }
 
-        if (password !== confirm) {
-            showMessage('signup-msg', "Passwords do not match.", 'error');
-            return;
-        }
+    var pair;
+    var userId = generateUserId(); // Function to generate unique user ID
+    var username = document.getElementById('signup-username').value.trim();
+    var email = document.getElementById('signup-email').value.trim();
+    var fullPhone = document.getElementById('signup-phone').value.trim();
 
-        SEA.encrypt(password, pair).then(function(encryptedPass) {
-            SEA.encrypt(confirm, pair).then(function(encryptedConfirm) {
-                var istDate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    SEA.pair().then(function(newPair) {
+        pair = newPair;
+        return Promise.all([SEA.encrypt(password, pair), SEA.encrypt(confirm, pair)]);
+    }).then(function([encryptedPass, encryptedConfirm]) {
+        var istDate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-                var userData = {
-                    username: username,
-                    email: email,
-                    phone: fullPhone,
-                    password: encryptedPass,
-                    confirm: encryptedConfirm,
-                    createdAt: istDate,
-                    pub: pair.pub,
-                    alias: username
-                };
+        var userData = {
+            username: username,
+            email: email,
+            phone: fullPhone,
+            password: encryptedPass,
+            confirm: encryptedConfirm,
+            createdAt: istDate,
+            pub: pair.pub,
+            alias: username
+        };
 
-                gun.get('imacx-accounts').get(userId).put(userData, function(ack) {
-                    if (ack.err) {
-                        showMessage('signup-msg', "Signup failed. Try again.", 'error');
-                    } else {
-                        showMessage('signup-msg', "Signup successful!", 'success');
-                    }
-                });
-            }).catch(function(err) {
-                showMessage('signup-msg', "Encryption failed (confirm): " + err.message, 'error');
-            });
-        }).catch(function(err) {
-            showMessage('signup-msg', "Encryption failed (password): " + err.message, 'error');
+        gun.get('imacx-accounts').get(userId).put(userData, function(ack) {
+            if (ack.err) {
+                showMessage('signup-msg', "Signup failed. Try again.", 'error');
+            } else {
+                showMessage('signup-msg', "Signup successful!", 'success');
+            }
         });
+    }).catch(function(err) {
+        showMessage('signup-msg', "Encryption failed: " + err.message, 'error');
     });
-            
+});
+
+function generateUserId() {
+    return 'user_' + Math.random().toString(36).substr(2, 9); // Generate a random user ID
+}
+
+function showMessage(elementId, message, type) {
+    var element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = type;
+}
 
     
 // Login Event Listener
