@@ -236,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
    
-    
 const gun = Gun();
 const users = gun.get('imacx-users');
 
@@ -259,36 +258,35 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
     document.getElementById("signup-confirm-error").textContent = "";
     document.getElementById("signup-msg").textContent = "";
 
-    // Basic Validation
+    // Validation
     if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
     if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
     if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
     if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password must be at least 6 characters";
     if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
 
-    // Check if email or phone already used
-    let duplicateFound = false;
-    users.map().once((data, key) => {
+    let emailExists = false;
+    let phoneExists = false;
+
+    users.map().once((data) => {
         if (data) {
-            const existingEmail = (data.email || "").toLowerCase();
-            const existingPhone = data.phone || "";
-            if (existingEmail === email || existingPhone === fullPhone) {
-                duplicateFound = true;
-                document.getElementById("signup-email-error").textContent = "Email or phone number with same country code already used.";
-            }
+            if ((data.email || "").toLowerCase() === email) emailExists = true;
+            if ((data.phone || "") === fullPhone) phoneExists = true;
         }
     });
 
-    // Delay signup to allow GUN map check to finish
     setTimeout(() => {
-        if (duplicateFound) return;
+        if (emailExists && phoneExists) {
+            document.getElementById("signup-email-error").textContent = "Same email and phone with this country code already used.";
+            return;
+        }
 
-        // Check if username already exists
+        // Check username
         users.get(fullID).once((data) => {
             if (data) {
                 document.getElementById("signup-user-error").textContent = "Username already exists";
             } else {
-                // Create new user securely
+                // Create user
                 Gun.SEA.pair().then(async pair => {
                     const encryptedPass = await Gun.SEA.encrypt(password, pair);
                     const userData = {
@@ -309,9 +307,8 @@ document.getElementById("signup-btn").addEventListener("click", async () => {
                 });
             }
         });
-    }, 800); // Wait 800ms to finish checking all users
+    }, 800); // Wait 800ms for map() to finish
 });
-
 
         
 
