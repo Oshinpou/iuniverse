@@ -236,40 +236,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
    
-    const gun = Gun();
-    const users = gun.get('imacx-users');
+    
+const gun = Gun();
+const users = gun.get('imacx-users');
 
-    document.getElementById("signup-btn").addEventListener("click", async () => {
-        const username = document.getElementById("signup-user").value.trim();
-        const email = document.getElementById("signup-email").value.trim();
-        const phone = document.getElementById("signup-phone").value.trim();
-        const countryCode = document.getElementById("signup-country-code").value;
-        const password = document.getElementById("signup-pass").value;
-        const confirm = document.getElementById("signup-confirm").value;
+document.getElementById("signup-btn").addEventListener("click", async () => {
+    const username = document.getElementById("signup-user").value.trim();
+    const email = document.getElementById("signup-email").value.trim().toLowerCase();
+    const phone = document.getElementById("signup-phone").value.trim();
+    const countryCode = document.getElementById("signup-country-code").value;
+    const password = document.getElementById("signup-pass").value;
+    const confirm = document.getElementById("signup-confirm").value;
 
-        // Clear error messages
-        document.getElementById("signup-user-error").textContent = "";
-        document.getElementById("signup-email-error").textContent = "";
-        document.getElementById("signup-phone-error").textContent = "";
-        document.getElementById("signup-pass-error").textContent = "";
-        document.getElementById("signup-confirm-error").textContent = "";
+    const fullPhone = `${countryCode}${phone}`;
+    const fullID = `imacx-user-${username}`;
 
-        // Validation
-        if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
-        if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
-        if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
-        if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password must be at least 6 characters";
-        if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
+    // Clear error messages
+    document.getElementById("signup-user-error").textContent = "";
+    document.getElementById("signup-email-error").textContent = "";
+    document.getElementById("signup-phone-error").textContent = "";
+    document.getElementById("signup-pass-error").textContent = "";
+    document.getElementById("signup-confirm-error").textContent = "";
+    document.getElementById("signup-msg").textContent = "";
 
-        const fullPhone = `${countryCode}${phone}`;
-        const fullID = `imacx-user-${username}`;
+    // Basic Validation
+    if (!username) return document.getElementById("signup-user-error").textContent = "Username is required";
+    if (!email.includes("@")) return document.getElementById("signup-email-error").textContent = "Invalid email";
+    if (phone.length < 6) return document.getElementById("signup-phone-error").textContent = "Invalid phone number";
+    if (password.length < 6) return document.getElementById("signup-pass-error").textContent = "Password must be at least 6 characters";
+    if (password !== confirm) return document.getElementById("signup-confirm-error").textContent = "Passwords do not match";
 
-        // Check if user exists
+    // Check if email or phone already used
+    let duplicateFound = false;
+    users.map().once((data, key) => {
+        if (data) {
+            const existingEmail = (data.email || "").toLowerCase();
+            const existingPhone = data.phone || "";
+            if (existingEmail === email || existingPhone === fullPhone) {
+                duplicateFound = true;
+                document.getElementById("signup-email-error").textContent = "Email or phone number with same country code already used.";
+            }
+        }
+    });
+
+    // Delay signup to allow GUN map check to finish
+    setTimeout(() => {
+        if (duplicateFound) return;
+
+        // Check if username already exists
         users.get(fullID).once((data) => {
             if (data) {
                 document.getElementById("signup-user-error").textContent = "Username already exists";
             } else {
-                // Securely create user using GUN SEA
+                // Create new user securely
                 Gun.SEA.pair().then(async pair => {
                     const encryptedPass = await Gun.SEA.encrypt(password, pair);
                     const userData = {
@@ -290,46 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         });
-    });
-
-    
-document.getElementById("signup-button").addEventListener("click", function () {
-  var email = document.getElementById("signup-email").value.trim().toLowerCase();
-  var countryCode = document.getElementById("signup-country-code").value;
-  var phone = document.getElementById("signup-phone").value.trim();
-  var fullPhone = countryCode + phone;
-
-  // Clear previous error messages
-  document.getElementById("signup-email-error").textContent = "";
-
-  // Prepare request data
-  var requestData = JSON.stringify({ email: email, phone: fullPhone });
-
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/api/check-email-or-phone-exists", true); // Updated endpoint
-  xhr.setRequestHeader("Content-Type", "application/json");
-
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        var result = JSON.parse(xhr.responseText);
-        
-        if (result.exists) {
-          document.getElementById("signup-email-error").textContent = "Same email or phone number with this country code already used.";
-          return;
-        }
-
-        // Continue signup
-        continueSignup(email, fullPhone);
-
-      } else {
-        document.getElementById("signup-email-error").textContent = "Error checking credentials.";
-      }
-    }
-  };
-
-  xhr.send(requestData);
+    }, 800); // Wait 800ms to finish checking all users
 });
+
 
         
 
