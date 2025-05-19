@@ -203,31 +203,46 @@ document.addEventListener('DOMContentLoaded', () => {
     continuousLogin();
     updateAccountStatus();
 
-    // Login
-    document.getElementById('login-btn').addEventListener('click', async () => {
-        clearErrors();
-        const username = document.getElementById('login-user').value;
-        const password = document.getElementById('login-pass').value;
+// login //
+    const gun = Gun();
+    const accounts = gun.get('imacx-accounts');
+
+    document.getElementById("login-btn").addEventListener("click", () => {
+        const username = document.getElementById("login-user").value.trim();
+        const password = document.getElementById("login-pass").value;
+
+        document.getElementById("login-error").textContent = "";
+        document.getElementById("login-msg").textContent = "";
 
         if (!username || !password) {
-            displayMessage('login-msg', 'Please enter both username and password.', true);
+            document.getElementById("login-error").textContent = "Username and password are required.";
             return;
         }
 
-        const user = gun.user();
-        user.auth(username, password, async (ack) => {
-            if (ack.err) {
-                displayMessage('login-msg', ack.err, true);
-            } else {
-                localStorage.setItem('imacx_alias', ack.sea.alias);
-                localStorage.setItem('imacx_auth', await SEA.encrypt(ack, await SEA.secret(ack.sea.alias, ack.sea.pair)));
-                localStorage.setItem('imacx_pair', JSON.stringify(ack.sea.pair));
-                setLoggedInStatus(ack.sea.pub);
-                displayMessage('login-msg', 'Login successful!');
+        const accountId = `imacx-account-${username}`;
+
+        accounts.get(accountId).once(async (data) => {
+            if (!data || !data.password || !data.pub) {
+                document.getElementById("login-error").textContent = "Account not found or corrupted.";
+                return;
+            }
+
+            try {
+                const decryptedPass = await Gun.SEA.decrypt(data.password, { pub: data.pub });
+
+                if (decryptedPass === password) {
+                    document.getElementById("login-msg").textContent = "Login successful!";
+                    // You can redirect or store session info here
+                } else {
+                    document.getElementById("login-error").textContent = "Incorrect password.";
+                }
+            } catch (err) {
+                document.getElementById("login-error").textContent = "Decryption failed. Try again.";
             }
         });
     });
 
+    
     // Logout
     document.getElementById('logout-btn').addEventListener('click', () => {
         gun.user().logout();
