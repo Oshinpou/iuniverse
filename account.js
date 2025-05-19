@@ -1,6 +1,6 @@
 // account.js
 
-// Initialize Gun with a public relay
+// Initialize Gun with a public relay (consider using multiple relays for redundancy)
 const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
 const SEA = Gun.SEA;
 const accountsNode = gun.get('imacx-accounts');
@@ -353,6 +353,8 @@ document.addEventListener('DOMContentLoaded', () => {
             displayMessage('recover-msg', 'Password recovery initiated. Please check your email/phone (simulation).');
             // In a real app, you would now trigger a backend function to send a reset link/code
             // based on the user's verified email or phone number.
+            // For a fully functional example with Gun, you might store a reset token
+            // associated with the user and provide a mechanism to verify it and set a new password.
         } else {
             displayMessage('recover-msg', 'No account found matching the provided information.', true);
         }
@@ -377,18 +379,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let foundAccountInfo = null;
+        let foundAccountId = null;
         if (email) {
             const account = await getAccountByEmail(email);
-            if (account) foundAccountInfo = await getAccountInfo(account.sea.pub); // Get info using pub key
+            if (account && account.sea && account.sea.pub) {
+                foundAccountId = account.sea.pub;
+                foundAccountInfo = await getAccountInfo(foundAccountId);
+            }
         }
         if (!foundAccountInfo && phone) {
             const account = await getAccountByPhone(phoneWithCode);
-            if (account) foundAccountInfo = await getAccountInfo(account.sea.pub); // Get info using pub key
+            if (account && account.sea && account.sea.pub) {
+                foundAccountId = account.sea.pub;
+                foundAccountInfo = await getAccountInfo(foundAccountId);
+            }
         }
 
         if (foundAccountInfo) {
-            // Basic password check (not secure for real-world, should use hashed passwords)
-            const user = gun.user(foundAccountInfo.id);
+            const user = gun.user(foundAccountId);
             user.auth(foundAccountInfo.username, password, ack => {
                 if (!ack.err) {
                     displayMessage('recover-username-msg', `Your username is: ${foundAccountInfo.username}`);
